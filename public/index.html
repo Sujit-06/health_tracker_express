@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Health Tracker</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f4f4; }
+    .container { width: 400px; margin: 50px auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.2); }
+    h2 { text-align: center; margin-bottom: 20px; }
+    input, button { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 5px; }
+    button { background: #28a745; color: white; cursor: pointer; font-weight: bold; }
+    button:hover { background: #218838; }
+    .hidden { display: none; }
+    #status { margin-top: 15px; font-weight: bold; text-align: center; }
+    .good { color: green; }
+    .bad { color: red; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- Register Form -->
+    <div id="registerDiv">
+      <h2>Register</h2>
+      <input type="text" id="regUsername" placeholder="Username">
+      <input type="password" id="regPassword" placeholder="Password">
+      <button onclick="register()">Register</button>
+      <p>Already have an account? <a href="#" onclick="showLogin()">Login</a></p>
+    </div>
+
+    <!-- Login Form -->
+    <div id="loginDiv" class="hidden">
+      <h2>Login</h2>
+      <input type="text" id="loginUsername" placeholder="Username">
+      <input type="password" id="loginPassword" placeholder="Password">
+      <button onclick="login()">Login</button>
+      <p>No account? <a href="#" onclick="showRegister()">Register</a></p>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboardDiv" class="hidden">
+      <h2>Dashboard</h2>
+      <label>Sleep (hours):</label>
+      <input type="number" id="sleep" min="0"><br>
+      <label>Water (glasses):</label>
+      <input type="number" id="water" min="0"><br>
+      <label>Exercise (minutes):</label>
+      <input type="number" id="exercise" min="0"><br>
+      <label>Study/Work (hours):</label>
+      <input type="number" id="study" min="0"><br>
+      <button onclick="checkStatus()">Check Status</button>
+      <p id="status"></p>
+      <button onclick="logout()">Logout</button>
+    </div>
+
+  </div>
+
+  <script>
+    function showLogin() {
+      document.getElementById("registerDiv").classList.add("hidden");
+      document.getElementById("loginDiv").classList.remove("hidden");
+    }
+    function showRegister() {
+      document.getElementById("loginDiv").classList.add("hidden");
+      document.getElementById("registerDiv").classList.remove("hidden");
+    }
+    function showDashboard() {
+      document.getElementById("registerDiv").classList.add("hidden");
+      document.getElementById("loginDiv").classList.add("hidden");
+      document.getElementById("dashboardDiv").classList.remove("hidden");
+    }
+
+    async function register() {
+      const username = document.getElementById("regUsername").value;
+      const password = document.getElementById("regPassword").value;
+      const res = await fetch("/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      alert(data.message);
+      if (data.success) showLogin();
+    }
+
+    async function login() {
+      const username = document.getElementById("loginUsername").value;
+      const password = document.getElementById("loginPassword").value;
+      const res = await fetch("/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      alert(data.message);
+      if (data.success) showDashboard();
+    }
+
+    async function logout() {
+      await fetch("/logout");
+      showLogin();
+    }
+
+    function checkStatus() {
+      const sleep = parseInt(document.getElementById("sleep").value) || 0;
+      const water = parseInt(document.getElementById("water").value) || 0;
+      const exercise = parseInt(document.getElementById("exercise").value) || 0;
+      const study = parseInt(document.getElementById("study").value) || 0;
+
+      let messages = [];
+
+      if (sleep >= 7) messages.push("✅ Great! You had enough sleep.");
+      else messages.push("⚠️ Try to sleep at least 7 hours.");
+
+      if (water >= 8) messages.push("✅ Good! You drank enough water.");
+      else messages.push("⚠️ Drink more water (8 glasses recommended).");
+
+      if (exercise >= 30) messages.push("✅ Awesome! You exercised enough.");
+      else messages.push("⚠️ Exercise at least 30 minutes.");
+
+      if (study >= 4) messages.push("✅ Productive! You studied/worked enough.");
+      else messages.push("⚠️ Work/Study at least 4 hours.");
+
+      document.getElementById("status").innerHTML = messages.join("<br>");
+    }
+  </script>
+</body>
+</html>
