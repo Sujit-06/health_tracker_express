@@ -1,128 +1,230 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Health Tracker</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f4f4; }
-    .container { width: 400px; margin: 50px auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.2); }
-    h2 { text-align: center; margin-bottom: 20px; }
-    input, button { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 5px; }
-    button { background: #28a745; color: white; cursor: pointer; font-weight: bold; }
-    button:hover { background: #218838; }
-    .hidden { display: none; }
-    #status { margin-top: 15px; font-weight: bold; text-align: center; }
-    .good { color: green; }
-    .bad { color: red; }
-  </style>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <div class="container">
+<body class="bg-gray-100">
 
-    <!-- Register Form -->
-    <div id="registerDiv">
-      <h2>Register</h2>
-      <input type="text" id="regUsername" placeholder="Username">
-      <input type="password" id="regPassword" placeholder="Password">
-      <button onclick="register()">Register</button>
-      <p>Already have an account? <a href="#" onclick="showLogin()">Login</a></p>
-    </div>
-
-    <!-- Login Form -->
-    <div id="loginDiv" class="hidden">
-      <h2>Login</h2>
-      <input type="text" id="loginUsername" placeholder="Username">
-      <input type="password" id="loginPassword" placeholder="Password">
-      <button onclick="login()">Login</button>
-      <p>No account? <a href="#" onclick="showRegister()">Register</a></p>
-    </div>
-
-    <!-- Dashboard -->
-    <div id="dashboardDiv" class="hidden">
-      <h2>Dashboard</h2>
-      <label>Sleep (hours):</label>
-      <input type="number" id="sleep" min="0"><br>
-      <label>Water (glasses):</label>
-      <input type="number" id="water" min="0"><br>
-      <label>Exercise (minutes):</label>
-      <input type="number" id="exercise" min="0"><br>
-      <label>Study/Work (hours):</label>
-      <input type="number" id="study" min="0"><br>
-      <button onclick="checkStatus()">Check Status</button>
-      <p id="status"></p>
-      <button onclick="logout()">Logout</button>
-    </div>
-
+<!-- ================= REGISTER ================= -->
+<section id="register-section" class="min-h-screen flex items-center justify-center">
+  <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
+    <h2 class="text-2xl font-bold text-center text-blue-600 mb-6">Register</h2>
+    <form id="register-form" class="space-y-4">
+      <input type="text" id="reg-username" placeholder="Username" class="w-full p-3 border rounded-lg" required>
+      <input type="password" id="reg-password" placeholder="Password" class="w-full p-3 border rounded-lg" required>
+      <button class="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600">Register</button>
+    </form>
+    <p class="mt-4 text-center">Already have an account? 
+      <a href="#" onclick="showLogin()" class="text-blue-600">Login</a>
+    </p>
   </div>
+</section>
 
-  <script>
-    function showLogin() {
-      document.getElementById("registerDiv").classList.add("hidden");
-      document.getElementById("loginDiv").classList.remove("hidden");
-    }
-    function showRegister() {
-      document.getElementById("loginDiv").classList.add("hidden");
-      document.getElementById("registerDiv").classList.remove("hidden");
-    }
-    function showDashboard() {
-      document.getElementById("registerDiv").classList.add("hidden");
-      document.getElementById("loginDiv").classList.add("hidden");
-      document.getElementById("dashboardDiv").classList.remove("hidden");
-    }
+<!-- ================= LOGIN ================= -->
+<section id="login-section" class="hidden min-h-screen flex items-center justify-center">
+  <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
+    <h2 class="text-2xl font-bold text-center text-green-600 mb-6">Login</h2>
+    <form id="login-form" class="space-y-4">
+      <input type="text" id="login-username" placeholder="Username" class="w-full p-3 border rounded-lg" required>
+      <input type="password" id="login-password" placeholder="Password" class="w-full p-3 border rounded-lg" required>
+      <button class="w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600">Login</button>
+    </form>
+  </div>
+</section>
 
-    async function register() {
-      const username = document.getElementById("regUsername").value;
-      const password = document.getElementById("regPassword").value;
-      const res = await fetch("/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password })
-      });
-      const data = await res.json();
-      alert(data.message);
-      if (data.success) showLogin();
-    }
+<!-- ================= DASHBOARD ================= -->
+<section id="dashboard-section" class="hidden min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-green-50">
+  <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-5xl">
+    <h2 class="text-2xl font-bold text-center text-green-600 mb-6">Health Dashboard</h2>
 
-    async function login() {
-      const username = document.getElementById("loginUsername").value;
-      const password = document.getElementById("loginPassword").value;
-      const res = await fetch("/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password })
-      });
-      const data = await res.json();
-      alert(data.message);
-      if (data.success) showDashboard();
-    }
+    <!-- Add Record Form -->
+    <form id="record-form" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <input type="date" id="date" class="p-2 border rounded-lg" required>
+      <input type="number" id="water" placeholder="Water (ml)" class="p-2 border rounded-lg" required>
+      <input type="number" id="exercise" placeholder="Exercise (min)" class="p-2 border rounded-lg" required>
+      <input type="number" id="sugar" placeholder="Blood Sugar" class="p-2 border rounded-lg" required>
+      <button class="col-span-1 md:col-span-4 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">Add Record</button>
+    </form>
 
-    async function logout() {
-      await fetch("/logout");
-      showLogin();
-    }
+    <!-- Records Table -->
+    <div class="overflow-x-auto">
+      <table class="w-full border border-gray-200 rounded-lg">
+        <thead class="bg-green-100">
+          <tr>
+            <th class="p-3">Date</th>
+            <th class="p-3">Water (ml)</th>
+            <th class="p-3">Exercise (min)</th>
+            <th class="p-3">Blood Sugar</th>
+            <th class="p-3 text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="records-table" class="divide-y divide-gray-200"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
 
-    function checkStatus() {
-      const sleep = parseInt(document.getElementById("sleep").value) || 0;
-      const water = parseInt(document.getElementById("water").value) || 0;
-      const exercise = parseInt(document.getElementById("exercise").value) || 0;
-      const study = parseInt(document.getElementById("study").value) || 0;
+<!-- ================= EDIT MODAL ================= -->
+<div id="edit-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+  <div class="bg-white p-6 rounded-lg w-full max-w-md">
+    <h2 class="text-xl font-bold mb-4">Edit Record</h2>
+    <form id="edit-form" class="space-y-4">
+      <input type="hidden" id="edit-id">
+      <input type="date" id="edit-date" class="w-full p-2 border rounded-lg" required>
+      <input type="number" id="edit-water" class="w-full p-2 border rounded-lg" required>
+      <input type="number" id="edit-exercise" class="w-full p-2 border rounded-lg" required>
+      <input type="number" id="edit-sugar" class="w-full p-2 border rounded-lg" required>
+      <div class="flex justify-between">
+        <button type="button" onclick="closeEditModal()" class="bg-gray-400 text-white px-4 py-2 rounded-lg">Cancel</button>
+        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
 
-      let messages = [];
+<script>
+const API_URL = "http://localhost:3000/api"; // replace with deployed URL
+let token = "";
 
-      if (sleep >= 7) messages.push("✅ Great! You had enough sleep.");
-      else messages.push("⚠️ Try to sleep at least 7 hours.");
+// Sections
+const registerSection = document.getElementById("register-section");
+const loginSection = document.getElementById("login-section");
+const dashboardSection = document.getElementById("dashboard-section");
 
-      if (water >= 8) messages.push("✅ Good! You drank enough water.");
-      else messages.push("⚠️ Drink more water (8 glasses recommended).");
+function showLogin() {
+  registerSection.classList.add("hidden");
+  loginSection.classList.remove("hidden");
+}
+function showDashboard() {
+  loginSection.classList.add("hidden");
+  dashboardSection.classList.remove("hidden");
+  fetchRecords();
+}
 
-      if (exercise >= 30) messages.push("✅ Awesome! You exercised enough.");
-      else messages.push("⚠️ Exercise at least 30 minutes.");
+// ================= AUTH =================
+document.getElementById("register-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const username = document.getElementById("reg-username").value;
+  const password = document.getElementById("reg-password").value;
 
-      if (study >= 4) messages.push("✅ Productive! You studied/worked enough.");
-      else messages.push("⚠️ Work/Study at least 4 hours.");
+  const res = await fetch(`${API_URL}/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password })
+  });
+  const data = await res.json();
+  alert(data.message || data.error);
+});
 
-      document.getElementById("status").innerHTML = messages.join("<br>");
-    }
-  </script>
+document.getElementById("login-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const username = document.getElementById("login-username").value;
+  const password = document.getElementById("login-password").value;
+
+  const res = await fetch(`${API_URL}/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password })
+  });
+  const data = await res.json();
+  if (data.token) {
+    token = data.token;
+    showDashboard();
+  } else {
+    alert(data.error);
+  }
+});
+
+// ================= DASHBOARD =================
+const recordForm = document.getElementById("record-form");
+const recordsTable = document.getElementById("records-table");
+
+recordForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const record = {
+    date: document.getElementById("date").value,
+    water_intake: document.getElementById("water").value,
+    exercise_duration: document.getElementById("exercise").value,
+    blood_sugar_level: document.getElementById("sugar").value
+  };
+
+  const res = await fetch(`${API_URL}/records`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(record)
+  });
+
+  if (res.ok) {
+    recordForm.reset();
+    fetchRecords();
+  }
+});
+
+async function fetchRecords() {
+  const res = await fetch(`${API_URL}/records`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  const records = await res.json();
+  recordsTable.innerHTML = "";
+
+  records.forEach(r => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td class="p-3">${r.date}</td>
+      <td class="p-3">${r.water_intake}</td>
+      <td class="p-3">${r.exercise_duration}</td>
+      <td class="p-3">${r.blood_sugar_level}</td>
+      <td class="p-3 text-center space-x-2">
+        <button onclick="openEditModal(${r.id}, '${r.date}', ${r.water_intake}, ${r.exercise_duration}, ${r.blood_sugar_level})" class="bg-blue-500 text-white px-2 py-1 rounded">Edit</button>
+        <button onclick="deleteRecord(${r.id})" class="bg-red-500 text-white px-2 py-1 rounded">Delete</button>
+      </td>
+    `;
+    recordsTable.appendChild(row);
+  });
+}
+
+async function deleteRecord(id) {
+  if (!confirm("Delete this record?")) return;
+  await fetch(`${API_URL}/records/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  fetchRecords();
+}
+
+// ================= EDIT MODAL =================
+const editModal = document.getElementById("edit-modal");
+function openEditModal(id, date, water, exercise, sugar) {
+  document.getElementById("edit-id").value = id;
+  document.getElementById("edit-date").value = date;
+  document.getElementById("edit-water").value = water;
+  document.getElementById("edit-exercise").value = exercise;
+  document.getElementById("edit-sugar").value = sugar;
+  editModal.classList.remove("hidden");
+}
+function closeEditModal() {
+  editModal.classList.add("hidden");
+}
+document.getElementById("edit-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const id = document.getElementById("edit-id").value;
+  const record = {
+    date: document.getElementById("edit-date").value,
+    water_intake: document.getElementById("edit-water").value,
+    exercise_duration: document.getElementById("edit-exercise").value,
+    blood_sugar_level: document.getElementById("edit-sugar").value
+  };
+  await fetch(`${API_URL}/records/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(record)
+  });
+  closeEditModal();
+  fetchRecords();
+});
+</script>
 </body>
 </html>

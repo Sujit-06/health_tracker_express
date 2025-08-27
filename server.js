@@ -1,33 +1,24 @@
 const express = require("express");
-const session = require("express-session");
-const bcrypt = require("bcryptjs");
 const sqlite3 = require("sqlite3").verbose();
-const path = require("path");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const cors = require("cors");
 const bodyParser = require("body-parser");
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
+const SECRET_KEY = "supersecretkey"; // change for production
 
 // Middleware
+app.use(cors());
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, "public")));
 
-app.use(
-  session({
-    secret: "mysecretkey",
-    resave: false,
-    saveUninitialized: true,
-  })
-);
-
-// Database
-const db = new sqlite3.Database("./health_tracker.db", (err) => {
-  if (err) console.error("DB error:", err);
-  else console.log("✅ Connected to SQLite");
+// Database Setup
+const db = new sqlite3.Database("./health.db", (err) => {
+  if (err) console.error("DB Error:", err);
+  else console.log("Connected to SQLite database");
 });
 
-// Create tables
 db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -35,85 +26,121 @@ db.serialize(() => {
     password TEXT
   )`);
 
-  db.run(`CREATE TABLE IF NOT EXISTS health_data (
+  db.run(`CREATE TABLE IF NOT EXISTS records (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
     date TEXT,
-    sleep INTEGER,
-    water INTEGER,
-    exercise INTEGER,
-    study INTEGER,
-    UNIQUE(user_id, date)
+    water_intake INTEGER,
+    exercise_duration INTEGER,
+    blood_sugar_level INTEGER,
+    FOREIGN KEY (user_id) REFERENCES users(id)
   )`);
 });
 
-// -------- ROUTES --------
+// Auth Middleware
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+  if (!token) return res.status(401).json({ error: "Access denied" });
 
+  jwt.verify(token, SECRET_KEY, (err, user) => {
+    if (err) return res.status(403).json({ error: "Invalid token" });
+    req.user = user;
+    next();
+  });
+}
+
+// ================== AUTH ROUTES ==================
 // Register
-app.post("/register", (req, res) => {
+app.post("/api/register", (req, res) => {
   const { username, password } = req.body;
   const hashed = bcrypt.hashSync(password, 10);
+
   db.run(
     "INSERT INTO users (username, password) VALUES (?, ?)",
     [username, hashed],
     function (err) {
-      if (err) return res.json({ success: false, message: "User already exists" });
-      res.json({ success: true, message: "Registered successfully" });
+      if (err) return res.status(400).json({ error: "User already exists" });
+      res.json({ message: "User registered successfully" });
     }
   );
 });
 
 // Login
-app.post("/login", (req, res) => {
+app.post("/api/login", (req, res) => {
   const { username, password } = req.body;
-  db.get("SELECT * FROM users WHERE username = ?", [username], (err, user) => {
-    if (!user) return res.json({ success: false, message: "User not found" });
-    if (!bcrypt.compareSync(password, user.password))
-      return res.json({ success: false, message: "Wrong password" });
 
-    req.session.userId = user.id;
-    res.json({ success: true, message: "Login successful" });
+  db.get("SELECT * FROM users WHERE username = ?", [username], (err, user) => {
+    if (!user || !bcrypt.compareSync(password, user.password)) {
+      return res.status(400).json({ error: "Invalid credentials" });
+    }
+
+    const token = jwt.sign({ id: user.id }, SECRET_KEY, { expiresIn: "1h" });
+    res.json({ token });
   });
 });
 
-// Logout
-app.get("/logout", (req, res) => {
-  req.session.destroy();
-  res.json({ success: true, message: "Logged out" });
+// ================== RECORD ROUTES ==================
+// Get all records
+app.get("/api/records", authenticateToken, (req, res) => {
+  db.all(
+    "SELECT * FROM records WHERE user_id = ?",
+    [req.user.id],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows);
+    }
+  );
 });
 
-// Save health data
-app.post("/save-data", (req, res) => {
-  if (!req.session.userId) return res.status(401).json({ success: false, message: "Not logged in" });
-  const { date, sleep, water, exercise, study } = req.body;
+// Add record
+app.post("/api/records", authenticateToken, (req, res) => {
+  const { date, water_intake, exercise_duration, blood_sugar_level } = req.body;
 
   db.run(
-    `INSERT INTO health_data (user_id, date, sleep, water, exercise, study)
-     VALUES (?, ?, ?, ?, ?, ?)
-     ON CONFLICT(user_id, date) DO UPDATE SET
-     sleep = excluded.sleep,
-     water = excluded.water,
-     exercise = excluded.exercise,
-     study = excluded.study`,
-    [req.session.userId, date, sleep, water, exercise, study],
-    (err) => {
-      if (err) return res.status(500).json({ success: false, message: "DB error" });
-      res.json({ success: true, message: "Data saved" });
+    "INSERT INTO records (user_id, date, water_intake, exercise_duration, blood_sugar_level) VALUES (?, ?, ?, ?, ?)",
+    [req.user.id, date, water_intake, exercise_duration, blood_sugar_level],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ id: this.lastID });
     }
   );
 });
 
-// Load health data for a given date
-app.get("/load-data/:date", (req, res) => {
-  if (!req.session.userId) return res.status(401).json({ success: false, message: "Not logged in" });
-  db.get(
-    "SELECT * FROM health_data WHERE user_id = ? AND date = ?",
-    [req.session.userId, req.params.date],
-    (err, row) => {
-      if (err) return res.status(500).json({ success: false, message: "DB error" });
-      res.json(row || {});
+// Update record
+app.put("/api/records/:id", authenticateToken, (req, res) => {
+  const { id } = req.params;
+  const { date, water_intake, exercise_duration, blood_sugar_level } = req.body;
+
+  db.run(
+    "UPDATE records SET date=?, water_intake=?, exercise_duration=?, blood_sugar_level=? WHERE id=? AND user_id=?",
+    [date, water_intake, exercise_duration, blood_sugar_level, id, req.user.id],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      if (this.changes === 0) return res.status(404).json({ error: "Record not found" });
+      res.json({ message: "Record updated" });
     }
   );
 });
 
-app.listen(PORT, () => console.log(`🚀 Server running → http://localhost:${PORT}`));
+// Delete record
+app.delete("/api/records/:id", authenticateToken, (req, res) => {
+  const { id } = req.params;
+
+  db.run(
+    "DELETE FROM records WHERE id=? AND user_id=?",
+    [id, req.user.id],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      if (this.changes === 0) return res.status(404).json({ error: "Record not found" });
+      res.json({ message: "Record deleted" });
+    }
+  );
+});
+
+// ================== SERVER ==================
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});
+
+module.exports = app; // for Vercel/Render
