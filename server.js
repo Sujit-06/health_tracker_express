@@ -1,111 +1,86 @@
-const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
-const cors = require('cors');
-const bcrypt = require('bcrypt');
-
+const express = require("express");
+const cors = require("cors");
+const sqlite3 = require("sqlite3").verbose();
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// ========================
-// Middleware
-// ========================
 app.use(cors({
-  origin: 'https://health-trackerdes.vercel.app' // Or your Vercel frontend URL: 'https://your-frontend.vercel.app'
+  origin: "*" // allow all, or replace with frontend URL
 }));
 app.use(express.json());
 
-// ========================
-// Database setup
-// ========================
-const db = new sqlite3.Database('./db.sqlite', (err) => {
-  if (err) {
-    console.error('Error connecting to SQLite', err);
-  } else {
-    console.log('Connected to SQLite database');
-  }
+// ==== SQLite DB ====
+const db = new sqlite3.Database("./health_tracker.db", (err) => {
+  if (err) console.error(err.message);
+  else console.log("Connected to SQLite database");
 });
 
-// Create users table if it doesn't exist
-db.run(`
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE,
-    password TEXT,
-    water INTEGER DEFAULT 0,
-    sleep INTEGER DEFAULT 0,
-    exercise INTEGER DEFAULT 0,
-    study INTEGER DEFAULT 0
-  )
-`);
+// Create tables
+db.run(`CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT UNIQUE,
+  password TEXT
+)`);
 
-// ========================
-// Root route
-// ========================
-app.get('/', (req, res) => {
-  res.send('Health Tracker API is running!');
+db.run(`CREATE TABLE IF NOT EXISTS records (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER,
+  date TEXT,
+  water INTEGER,
+  sleep INTEGER,
+  exercise INTEGER,
+  study INTEGER,
+  FOREIGN KEY(user_id) REFERENCES users(id)
+)`);
+
+// ==== Routes ====
+
+// Root
+app.get("/", (req, res) => {
+  res.send("Health Tracker API is running!");
 });
-
-// ========================
-// API Routes
-// ========================
 
 // Register
-app.post('/register', async (req, res) => {
+app.post("/register", (req, res) => {
   const { username, password } = req.body;
-  if (!username || !password) return res.status(400).json({ error: 'Username & password required' });
-
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  db.run(`INSERT INTO users (username, password) VALUES (?, ?)`, [username, hashedPassword], function(err) {
-    if (err) return res.status(500).json({ error: 'User may already exist' });
-    res.json({ message: 'User registered', userId: this.lastID });
+  db.run(`INSERT INTO users(username,password) VALUES (?,?)`, [username,password], function(err){
+    if(err) res.json({error: "Username already exists"});
+    else res.json({message: "Registered successfully"});
   });
 });
 
 // Login
-app.post('/login', (req, res) => {
+app.post("/login", (req,res)=>{
   const { username, password } = req.body;
-
-  db.get(`SELECT * FROM users WHERE username = ?`, [username], async (err, user) => {
-    if (err) return res.status(500).json({ error: 'Database error' });
-    if (!user) return res.status(400).json({ error: 'User not found' });
-
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) return res.status(401).json({ error: 'Incorrect password' });
-
-    res.json({ message: 'Login successful', userId: user.id });
+  db.get(`SELECT id FROM users WHERE username=? AND password=?`, [username,password], (err,row)=>{
+    if(err || !row) res.json({error: "Invalid credentials"});
+    else res.json({userId: row.id});
   });
 });
 
-// Update daily stats
-app.post('/update', (req, res) => {
-  const { userId, water, sleep, exercise, study } = req.body;
-
-  db.run(
-    `UPDATE users SET water = ?, sleep = ?, exercise = ?, study = ? WHERE id = ?`,
-    [water, sleep, exercise, study, userId],
-    function(err) {
-      if (err) return res.status(500).json({ error: 'Update failed' });
-      res.json({ message: 'Stats updated' });
+// Add/Update Daily Stats
+app.post("/update", (req,res)=>{
+  const { userId, date, water, sleep, exercise, study } = req.body;
+  db.get(`SELECT id FROM records WHERE user_id=? AND date=?`, [userId, date], (err,row)=>{
+    if(row){
+      db.run(`UPDATE records SET water=?, sleep=?, exercise=?, study=? WHERE id=?`,
+        [water,sleep,exercise,study,row.id], ()=>res.json({message:"Updated record"}));
+    } else {
+      db.run(`INSERT INTO records(user_id,date,water,sleep,exercise,study) VALUES(?,?,?,?,?,?)`,
+        [userId,date,water,sleep,exercise,study], ()=>res.json({message:"Added record"}));
     }
-  );
-});
-
-// Get dashboard stats
-app.get('/dashboard/:userId', (req, res) => {
-  const userId = req.params.userId;
-
-  db.get(`SELECT water, sleep, exercise, study FROM users WHERE id = ?`, [userId], (err, row) => {
-    if (err) return res.status(500).json({ error: 'Database error' });
-    if (!row) return res.status(404).json({ error: 'User not found' });
-    res.json(row);
   });
 });
 
-// ========================
-// Start server
-// ========================
-app.listen(PORT, () => {
+// Get dashboard / all records
+app.get("/dashboard/:userId", (req,res)=>{
+  const userId = req.params.userId;
+  db.all(`SELECT * FROM records WHERE user_id=? ORDER BY date DESC`, [userId], (err,rows)=>{
+    if(err) res.json({error: err.message});
+    else res.json(rows);
+  });
+});
+
+app.listen(PORT, ()=>{
   console.log(`Server running on http://localhost:${PORT}`);
-  console.log(`Available at your primary URL ${process.env.RENDER_EXTERNAL_URL || 'Render URL'}`);
 });

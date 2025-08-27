@@ -1,21 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Health Tracker</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Health Tracker</title>
+<script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100">
 
-<!-- ================= REGISTER ================= -->
+<!-- REGISTER -->
 <section id="register-section" class="min-h-screen flex items-center justify-center">
   <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
     <h2 class="text-2xl font-bold text-center text-blue-600 mb-6">Register</h2>
     <form id="register-form" class="space-y-4">
       <input type="text" id="reg-username" placeholder="Username" class="w-full p-3 border rounded-lg" required>
       <input type="password" id="reg-password" placeholder="Password" class="w-full p-3 border rounded-lg" required>
-      <button class="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600">Register</button>
+      <button type="submit" class="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600">Register</button>
     </form>
     <p class="mt-4 text-center">Already have an account? 
       <a href="#" onclick="showLogin()" class="text-blue-600">Login</a>
@@ -23,35 +23,37 @@
   </div>
 </section>
 
-<!-- ================= LOGIN ================= -->
+<!-- LOGIN -->
 <section id="login-section" class="hidden min-h-screen flex items-center justify-center">
   <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
     <h2 class="text-2xl font-bold text-center text-green-600 mb-6">Login</h2>
     <form id="login-form" class="space-y-4">
       <input type="text" id="login-username" placeholder="Username" class="w-full p-3 border rounded-lg" required>
       <input type="password" id="login-password" placeholder="Password" class="w-full p-3 border rounded-lg" required>
-      <button class="w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600">Login</button>
+      <button type="submit" class="w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600">Login</button>
     </form>
   </div>
 </section>
 
-<!-- ================= DASHBOARD ================= -->
+<!-- DASHBOARD -->
 <section id="dashboard-section" class="hidden min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-green-50">
   <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-5xl">
     <h2 class="text-2xl font-bold text-center text-green-600 mb-6">Health Dashboard</h2>
 
-    <!-- Daily Stats Form -->
-    <form id="record-form" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-      <input type="date" id="date" class="p-2 border rounded-lg" required>
-      <input type="number" id="water" placeholder="Water (glasses)" class="p-2 border rounded-lg" required>
-      <input type="number" id="sleep" placeholder="Sleep (hours)" class="p-2 border rounded-lg" required>
-      <input type="number" id="exercise" placeholder="Exercise (min)" class="p-2 border rounded-lg" required>
-      <input type="number" id="study" placeholder="Study (hours)" class="p-2 border rounded-lg" required>
-      <button class="col-span-1 md:col-span-4 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">Add / Update Stats</button>
+    <!-- Add Record -->
+    <form id="record-form" class="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
+      <input type="date" id="date" required class="p-2 border rounded-lg">
+      <input type="number" id="water" placeholder="Water (glasses)" required class="p-2 border rounded-lg">
+      <input type="number" id="sleep" placeholder="Sleep (hrs)" required class="p-2 border rounded-lg">
+      <input type="number" id="exercise" placeholder="Exercise (min)" required class="p-2 border rounded-lg">
+      <input type="number" id="study" placeholder="Study (hrs)" required class="p-2 border rounded-lg">
+      <button type="submit" class="col-span-1 md:col-span-6 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">Add / Update</button>
     </form>
 
-    <!-- Dashboard Stats -->
-    <div id="status-message" class="text-center text-lg font-semibold mb-4"></div>
+    <!-- Status -->
+    <div id="status-message" class="text-center font-semibold mb-4"></div>
+
+    <!-- Records Table -->
     <div class="overflow-x-auto">
       <table class="w-full border border-gray-200 rounded-lg">
         <thead class="bg-green-100">
@@ -70,13 +72,14 @@
 </section>
 
 <script>
-const API_URL = "https://health-tracker-exp.onrender.com"; // Render backend URL
+const API_URL = "https://health-tracker-exp.onrender.com";
 let currentUserId = null;
 
-// Sections
 const registerSection = document.getElementById("register-section");
 const loginSection = document.getElementById("login-section");
 const dashboardSection = document.getElementById("dashboard-section");
+const statusMessage = document.getElementById("status-message");
+const recordsTable = document.getElementById("records-table");
 
 function showLogin() {
   registerSection.classList.add("hidden");
@@ -89,96 +92,90 @@ function showDashboard() {
   fetchRecords();
 }
 
-// ================= AUTH =================
-document.getElementById("register-form").addEventListener("submit", async (e) => {
+// ==== Register ====
+document.getElementById("register-form").addEventListener("submit", async e=>{
   e.preventDefault();
   const username = document.getElementById("reg-username").value;
   const password = document.getElementById("reg-password").value;
 
-  const res = await fetch(`${API_URL}/register`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password })
+  const res = await fetch(`${API_URL}/register`,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({username,password})
   });
   const data = await res.json();
   alert(data.message || data.error);
 });
 
-document.getElementById("login-form").addEventListener("submit", async (e) => {
+// ==== Login ====
+document.getElementById("login-form").addEventListener("submit", async e=>{
   e.preventDefault();
   const username = document.getElementById("login-username").value;
   const password = document.getElementById("login-password").value;
 
-  const res = await fetch(`${API_URL}/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password })
+  const res = await fetch(`${API_URL}/login`,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({username,password})
   });
   const data = await res.json();
-  if (data.userId) {
+  if(data.userId){
     currentUserId = data.userId;
     showDashboard();
-  } else {
-    alert(data.error);
-  }
+  } else alert(data.error);
 });
 
-// ================= DASHBOARD =================
-const recordForm = document.getElementById("record-form");
-const recordsTable = document.getElementById("records-table");
-const statusMessage = document.getElementById("status-message");
-
-recordForm.addEventListener("submit", async (e) => {
+// ==== Add/Update Record ====
+document.getElementById("record-form").addEventListener("submit", async e=>{
   e.preventDefault();
   const record = {
     userId: currentUserId,
+    date: document.getElementById("date").value,
     water: parseInt(document.getElementById("water").value),
     sleep: parseInt(document.getElementById("sleep").value),
     exercise: parseInt(document.getElementById("exercise").value),
-    study: parseInt(document.getElementById("study").value),
-    date: document.getElementById("date").value
+    study: parseInt(document.getElementById("study").value)
   };
-
-  await fetch(`${API_URL}/update`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(record)
+  await fetch(`${API_URL}/update`,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(record)
   });
-
   fetchRecords();
 });
 
-async function fetchRecords() {
+// ==== Fetch Records & Show Dashboard ====
+async function fetchRecords(){
   const res = await fetch(`${API_URL}/dashboard/${currentUserId}`);
-  const stats = await res.json();
+  const records = await res.json();
 
-  // Update table
-  recordsTable.innerHTML = `
-    <tr>
-      <td class="p-3">${new Date().toLocaleDateString()}</td>
-      <td class="p-3">${stats.water}</td>
-      <td class="p-3">${stats.sleep}</td>
-      <td class="p-3">${stats.exercise}</td>
-      <td class="p-3">${stats.study}</td>
-    </tr>
-  `;
+  recordsTable.innerHTML = "";
+  let latest = {water:0, sleep:0, exercise:0, study:0};
+  records.forEach(r=>{
+    const waterClass = r.water >= 8 ? "bg-green-100" : "bg-red-100";
+    const sleepClass = r.sleep >= 7 ? "bg-green-100" : "bg-red-100";
+    const exerciseClass = r.exercise >= 30 ? "bg-green-100" : "bg-red-100";
+    const studyClass = r.study >= 4 ? "bg-green-100" : "bg-red-100";
 
-  // Update status message
-  let messages = [];
-  if (stats.water >= 8) messages.push("💧 Water goal met!");
-  if (stats.sleep >= 7) messages.push("😴 Sleep goal met!");
-  if (stats.exercise >= 30) messages.push("🏋️ Exercise goal met!");
-  if (stats.study >= 4) messages.push("📚 Study goal met!");
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td class="p-3">${r.date}</td>
+      <td class="p-3 ${waterClass}">${r.water} ${r.water >= 8 ? "💧" : ""}</td>
+      <td class="p-3 ${sleepClass}">${r.sleep} ${r.sleep >= 7 ? "😴" : ""}</td>
+      <td class="p-3 ${exerciseClass}">${r.exercise} ${r.exercise >= 30 ? "🏋️" : ""}</td>
+      <td class="p-3 ${studyClass}">${r.study} ${r.study >= 4 ? "📚" : ""}</td>
+    `;
+    recordsTable.appendChild(row);
+    if(!latest.date || r.date >= latest.date) latest = r;
+  });
 
-  if (messages.length === 4) {
-    statusMessage.textContent = "🎉 Great job! All daily goals met!";
-    statusMessage.classList.add("text-green-600");
-  } else {
-    statusMessage.textContent = "Keep going! " + messages.join(" ");
-    statusMessage.classList.add("text-yellow-600");
-  }
+  const messages = [];
+  if(latest.water>=8) messages.push("💧 Water goal met!");
+  if(latest.sleep>=7) messages.push("😴 Sleep goal met!");
+  if(latest.exercise>=30) messages.push("🏋️ Exercise goal met!");
+  if(latest.study>=4) messages.push("📚 Study goal met!");
+  statusMessage.textContent = messages.length===4?"🎉 Great job! All goals met!":"Keep going! " + messages.join(" ");
 }
 </script>
-
 </body>
 </html>
