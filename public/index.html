@@ -40,25 +40,27 @@
   <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-5xl">
     <h2 class="text-2xl font-bold text-center text-green-600 mb-6">Health Dashboard</h2>
 
-    <!-- Add Record Form -->
+    <!-- Daily Stats Form -->
     <form id="record-form" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
       <input type="date" id="date" class="p-2 border rounded-lg" required>
-      <input type="number" id="water" placeholder="Water (ml)" class="p-2 border rounded-lg" required>
+      <input type="number" id="water" placeholder="Water (glasses)" class="p-2 border rounded-lg" required>
+      <input type="number" id="sleep" placeholder="Sleep (hours)" class="p-2 border rounded-lg" required>
       <input type="number" id="exercise" placeholder="Exercise (min)" class="p-2 border rounded-lg" required>
-      <input type="number" id="sugar" placeholder="Blood Sugar" class="p-2 border rounded-lg" required>
-      <button class="col-span-1 md:col-span-4 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">Add Record</button>
+      <input type="number" id="study" placeholder="Study (hours)" class="p-2 border rounded-lg" required>
+      <button class="col-span-1 md:col-span-4 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">Add / Update Stats</button>
     </form>
 
-    <!-- Records Table -->
+    <!-- Dashboard Stats -->
+    <div id="status-message" class="text-center text-lg font-semibold mb-4"></div>
     <div class="overflow-x-auto">
       <table class="w-full border border-gray-200 rounded-lg">
         <thead class="bg-green-100">
           <tr>
             <th class="p-3">Date</th>
-            <th class="p-3">Water (ml)</th>
-            <th class="p-3">Exercise (min)</th>
-            <th class="p-3">Blood Sugar</th>
-            <th class="p-3 text-center">Actions</th>
+            <th class="p-3">Water</th>
+            <th class="p-3">Sleep</th>
+            <th class="p-3">Exercise</th>
+            <th class="p-3">Study</th>
           </tr>
         </thead>
         <tbody id="records-table" class="divide-y divide-gray-200"></tbody>
@@ -67,27 +69,9 @@
   </div>
 </section>
 
-<!-- ================= EDIT MODAL ================= -->
-<div id="edit-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-  <div class="bg-white p-6 rounded-lg w-full max-w-md">
-    <h2 class="text-xl font-bold mb-4">Edit Record</h2>
-    <form id="edit-form" class="space-y-4">
-      <input type="hidden" id="edit-id">
-      <input type="date" id="edit-date" class="w-full p-2 border rounded-lg" required>
-      <input type="number" id="edit-water" class="w-full p-2 border rounded-lg" required>
-      <input type="number" id="edit-exercise" class="w-full p-2 border rounded-lg" required>
-      <input type="number" id="edit-sugar" class="w-full p-2 border rounded-lg" required>
-      <div class="flex justify-between">
-        <button type="button" onclick="closeEditModal()" class="bg-gray-400 text-white px-4 py-2 rounded-lg">Cancel</button>
-        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg">Save</button>
-      </div>
-    </form>
-  </div>
-</div>
-
 <script>
-const API_URL = "http://localhost:3000/api"; // replace with deployed URL
-let token = "";
+const API_URL = "https://health-tracker-exp.onrender.com"; // Render backend URL
+let currentUserId = null;
 
 // Sections
 const registerSection = document.getElementById("register-section");
@@ -100,6 +84,7 @@ function showLogin() {
 }
 function showDashboard() {
   loginSection.classList.add("hidden");
+  registerSection.classList.add("hidden");
   dashboardSection.classList.remove("hidden");
   fetchRecords();
 }
@@ -130,8 +115,8 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
     body: JSON.stringify({ username, password })
   });
   const data = await res.json();
-  if (data.token) {
-    token = data.token;
+  if (data.userId) {
+    currentUserId = data.userId;
     showDashboard();
   } else {
     alert(data.error);
@@ -141,90 +126,59 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
 // ================= DASHBOARD =================
 const recordForm = document.getElementById("record-form");
 const recordsTable = document.getElementById("records-table");
+const statusMessage = document.getElementById("status-message");
 
 recordForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const record = {
-    date: document.getElementById("date").value,
-    water_intake: document.getElementById("water").value,
-    exercise_duration: document.getElementById("exercise").value,
-    blood_sugar_level: document.getElementById("sugar").value
+    userId: currentUserId,
+    water: parseInt(document.getElementById("water").value),
+    sleep: parseInt(document.getElementById("sleep").value),
+    exercise: parseInt(document.getElementById("exercise").value),
+    study: parseInt(document.getElementById("study").value),
+    date: document.getElementById("date").value
   };
 
-  const res = await fetch(`${API_URL}/records`, {
+  await fetch(`${API_URL}/update`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(record)
   });
 
-  if (res.ok) {
-    recordForm.reset();
-    fetchRecords();
-  }
+  fetchRecords();
 });
 
 async function fetchRecords() {
-  const res = await fetch(`${API_URL}/records`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  const records = await res.json();
-  recordsTable.innerHTML = "";
+  const res = await fetch(`${API_URL}/dashboard/${currentUserId}`);
+  const stats = await res.json();
 
-  records.forEach(r => {
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <td class="p-3">${r.date}</td>
-      <td class="p-3">${r.water_intake}</td>
-      <td class="p-3">${r.exercise_duration}</td>
-      <td class="p-3">${r.blood_sugar_level}</td>
-      <td class="p-3 text-center space-x-2">
-        <button onclick="openEditModal(${r.id}, '${r.date}', ${r.water_intake}, ${r.exercise_duration}, ${r.blood_sugar_level})" class="bg-blue-500 text-white px-2 py-1 rounded">Edit</button>
-        <button onclick="deleteRecord(${r.id})" class="bg-red-500 text-white px-2 py-1 rounded">Delete</button>
-      </td>
-    `;
-    recordsTable.appendChild(row);
-  });
-}
+  // Update table
+  recordsTable.innerHTML = `
+    <tr>
+      <td class="p-3">${new Date().toLocaleDateString()}</td>
+      <td class="p-3">${stats.water}</td>
+      <td class="p-3">${stats.sleep}</td>
+      <td class="p-3">${stats.exercise}</td>
+      <td class="p-3">${stats.study}</td>
+    </tr>
+  `;
 
-async function deleteRecord(id) {
-  if (!confirm("Delete this record?")) return;
-  await fetch(`${API_URL}/records/${id}`, {
-    method: "DELETE",
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  fetchRecords();
-}
+  // Update status message
+  let messages = [];
+  if (stats.water >= 8) messages.push("💧 Water goal met!");
+  if (stats.sleep >= 7) messages.push("😴 Sleep goal met!");
+  if (stats.exercise >= 30) messages.push("🏋️ Exercise goal met!");
+  if (stats.study >= 4) messages.push("📚 Study goal met!");
 
-// ================= EDIT MODAL =================
-const editModal = document.getElementById("edit-modal");
-function openEditModal(id, date, water, exercise, sugar) {
-  document.getElementById("edit-id").value = id;
-  document.getElementById("edit-date").value = date;
-  document.getElementById("edit-water").value = water;
-  document.getElementById("edit-exercise").value = exercise;
-  document.getElementById("edit-sugar").value = sugar;
-  editModal.classList.remove("hidden");
+  if (messages.length === 4) {
+    statusMessage.textContent = "🎉 Great job! All daily goals met!";
+    statusMessage.classList.add("text-green-600");
+  } else {
+    statusMessage.textContent = "Keep going! " + messages.join(" ");
+    statusMessage.classList.add("text-yellow-600");
+  }
 }
-function closeEditModal() {
-  editModal.classList.add("hidden");
-}
-document.getElementById("edit-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const id = document.getElementById("edit-id").value;
-  const record = {
-    date: document.getElementById("edit-date").value,
-    water_intake: document.getElementById("edit-water").value,
-    exercise_duration: document.getElementById("edit-exercise").value,
-    blood_sugar_level: document.getElementById("edit-sugar").value
-  };
-  await fetch(`${API_URL}/records/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify(record)
-  });
-  closeEditModal();
-  fetchRecords();
-});
 </script>
+
 </body>
 </html>
