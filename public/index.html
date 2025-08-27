@@ -1,189 +1,195 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Health Tracker</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    .hidden { display: none; }
+    .nav-active { background-color: #4F46E5; color: white; }
+  </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+<body class="bg-gray-100">
 
-  <!-- LOGIN PAGE -->
-  <section id="loginPage" class="w-full max-w-md bg-white p-6 rounded-lg shadow-md">
-    <h2 class="text-2xl font-bold mb-4 text-center">Login</h2>
-    <input id="loginEmail" type="email" placeholder="Email" class="w-full mb-3 p-2 border rounded">
-    <input id="loginPassword" type="password" placeholder="Password" class="w-full mb-3 p-2 border rounded">
-    <button onclick="login()" class="w-full bg-blue-500 text-white py-2 rounded">Login</button>
-    <p class="mt-4 text-sm text-gray-600 text-center">
-      Don’t have an account? <a href="#" onclick="showSignup()" class="text-blue-500">Sign Up</a>
-    </p>
-  </section>
+  <!-- ===== LOGIN & SIGNUP ===== -->
+  <div id="authPage" class="flex items-center justify-center h-screen">
+    <div class="bg-white p-8 rounded-lg shadow-md w-96">
+      <h2 class="text-2xl font-bold mb-4 text-center">Login</h2>
+      <input id="loginUsername" placeholder="Username" class="w-full border p-2 mb-2 rounded"/>
+      <input id="loginPassword" type="password" placeholder="Password" class="w-full border p-2 mb-4 rounded"/>
+      <button onclick="login()" class="w-full bg-blue-500 text-white p-2 rounded">Login</button>
 
-  <!-- SIGNUP PAGE -->
-  <section id="signupPage" class="hidden w-full max-w-md bg-white p-6 rounded-lg shadow-md">
-    <h2 class="text-2xl font-bold mb-4 text-center">Sign Up</h2>
-    <input id="signupName" type="text" placeholder="Name" class="w-full mb-3 p-2 border rounded">
-    <input id="signupEmail" type="email" placeholder="Email" class="w-full mb-3 p-2 border rounded">
-    <input id="signupPassword" type="password" placeholder="Password" class="w-full mb-3 p-2 border rounded">
-    <button onclick="signup()" class="w-full bg-green-500 text-white py-2 rounded">Sign Up</button>
-    <p class="mt-4 text-sm text-gray-600 text-center">
-      Already have an account? <a href="#" onclick="showLogin()" class="text-blue-500">Login</a>
-    </p>
-  </section>
+      <p class="text-center mt-4">No account? 
+        <a href="#" onclick="toggleSignup()" class="text-blue-600">Sign up</a>
+      </p>
 
-  <!-- DASHBOARD -->
-  <section id="dashboardPage" class="hidden w-full">
-    <!-- Navbar -->
-    <nav class="bg-white shadow-md p-4 flex justify-between items-center">
-      <div class="flex space-x-6">
-        <button class="nav-btn font-semibold text-gray-700" data-target="dashboard">Dashboard</button>
-        <button class="nav-btn text-gray-600" data-target="habits">Habits</button>
-        <button class="nav-btn text-gray-600" data-target="workouts">Workouts</button>
-        <button class="nav-btn text-gray-600" data-target="meals">Meals</button>
-        <button class="nav-btn text-gray-600" data-target="sleep">Sleep</button>
-        <button class="nav-btn text-gray-600" data-target="mood">Mood</button>
-        <button class="nav-btn text-gray-600" data-target="friends">Friends</button>
+      <div id="signupForm" class="hidden mt-6">
+        <h2 class="text-xl font-bold mb-2 text-center">Sign Up</h2>
+        <input id="signupUsername" placeholder="Username" class="w-full border p-2 mb-2 rounded"/>
+        <input id="signupPassword" type="password" placeholder="Password" class="w-full border p-2 mb-4 rounded"/>
+        <button onclick="signup()" class="w-full bg-green-500 text-white p-2 rounded">Sign Up</button>
       </div>
-      <div class="flex space-x-4 items-center">
-        <span id="userInfo" class="text-gray-600">User | Date</span>
-        <button onclick="logout()" class="bg-red-500 text-white px-3 py-1 rounded">Logout</button>
-      </div>
-    </nav>
-
-    <!-- Dashboard Content -->
-    <div class="p-6">
-      <!-- DASHBOARD SECTION -->
-      <section id="dashboard" class="tab-content">
-        <h2 class="text-xl font-bold mb-4">Today Overview</h2>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div class="bg-white p-4 rounded shadow">Habit Streak<br><span id="habitStreak">0 Days</span></div>
-          <div class="bg-white p-4 rounded shadow">Workouts This Week<br><span id="workoutsCount">0</span></div>
-          <div class="bg-white p-4 rounded shadow">Calories Today<br><span id="calories">0 / 2000 kcal</span></div>
-          <div class="bg-white p-4 rounded shadow flex flex-col items-center">
-            Hydration<br><span id="waterGlasses">0 glasses</span>
-            <button onclick="addGlass()" class="bg-blue-500 text-white px-2 py-1 rounded mt-2">+ Add Glass</button>
-          </div>
-        </div>
-
-        <!-- Charts -->
-        <h2 class="text-xl font-bold mb-4">Trends (Last 7 Days)</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <canvas id="caloriesChart"></canvas>
-          <canvas id="workoutsChart"></canvas>
-          <canvas id="mealsChart"></canvas>
-          <canvas id="hydrationChart"></canvas>
-        </div>
-
-        <div class="mt-6">
-          <button onclick="downloadReport()" class="bg-green-500 text-white px-4 py-2 rounded">Download Full Report (CSV)</button>
-        </div>
-      </section>
-
-      <!-- Other Sections -->
-      <section id="habits" class="tab-content hidden"><h2 class="text-2xl font-bold mb-4">Habits</h2><p>Track your daily habits...</p></section>
-      <section id="workouts" class="tab-content hidden"><h2 class="text-2xl font-bold mb-4">Workouts</h2><p>Log your workouts...</p></section>
-      <section id="meals" class="tab-content hidden"><h2 class="text-2xl font-bold mb-4">Meals</h2><p>Log your meals...</p></section>
-      <section id="sleep" class="tab-content hidden"><h2 class="text-2xl font-bold mb-4">Sleep</h2><p>Track your sleep...</p></section>
-      <section id="mood" class="tab-content hidden"><h2 class="text-2xl font-bold mb-4">Mood</h2><p>Log your mood...</p></section>
-      <section id="friends" class="tab-content hidden"><h2 class="text-2xl font-bold mb-4">Friends</h2><p>Connect with friends...</p></section>
     </div>
-  </section>
+  </div>
+
+  <!-- ===== DASHBOARD ===== -->
+  <div id="dashboardPage" class="hidden">
+    <!-- Top Navbar -->
+    <div class="flex justify-between items-center bg-indigo-600 p-4 text-white">
+      <h1 class="text-xl font-bold">📊 Health Tracker</h1>
+      <div>
+        <span id="userInfo" class="mr-4"></span>
+        <button onclick="logout()" class="bg-red-500 px-3 py-1 rounded">Logout</button>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="flex bg-gray-200 p-2 space-x-2">
+      <button class="tab-btn px-4 py-2 rounded nav-active" data-tab="overview">Dashboard</button>
+      <button class="tab-btn px-4 py-2 rounded" data-tab="habits">Habits</button>
+      <button class="tab-btn px-4 py-2 rounded" data-tab="workouts">Workouts</button>
+      <button class="tab-btn px-4 py-2 rounded" data-tab="meals">Meals</button>
+      <button class="tab-btn px-4 py-2 rounded" data-tab="sleep">Sleep</button>
+      <button class="tab-btn px-4 py-2 rounded" data-tab="hydration">Hydration</button>
+      <button class="tab-btn px-4 py-2 rounded" data-tab="mood">Mood</button>
+      <button class="tab-btn px-4 py-2 rounded" data-tab="friends">Friends</button>
+    </div>
+
+    <!-- ===== Sections ===== -->
+    <div id="overview" class="tab-content p-6">
+      <h2 class="text-xl font-bold mb-4">Today Overview</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-white p-4 rounded shadow">Habit Streak: <span id="habitStreak">0</span> 🔥</div>
+        <div class="bg-white p-4 rounded shadow">Workouts This Week: <span id="workoutsThisWeek">0</span></div>
+        <div class="bg-white p-4 rounded shadow">Calories Today: <span id="caloriesToday">0</span></div>
+        <div class="bg-white p-4 rounded shadow">Water: <span id="hydrationToday">0</span> glasses</div>
+      </div>
+    </div>
+
+    <!-- Habits -->
+    <div id="habits" class="tab-content hidden p-6">
+      <h2 class="text-xl font-bold mb-4">Daily Habits</h2>
+      <input id="newHabit" placeholder="Add new habit..." class="border p-2 rounded"/>
+      <button onclick="addHabit()" class="bg-purple-500 text-white px-3 py-1 rounded ml-2">Add Habit</button>
+      <ul id="habitList" class="mt-4"></ul>
+    </div>
+
+    <!-- Workouts -->
+    <div id="workouts" class="tab-content hidden p-6">
+      <h2 class="text-xl font-bold mb-4">Log New Workout</h2>
+      <input id="workoutType" placeholder="Type (Running, Gym)" class="border p-2 rounded w-full mb-2"/>
+      <input id="workoutDuration" type="number" placeholder="Duration (min)" class="border p-2 rounded w-full mb-2"/>
+      <input id="workoutCalories" type="number" placeholder="Calories Burned" class="border p-2 rounded w-full mb-2"/>
+      <button onclick="addWorkout()" class="bg-blue-500 text-white px-3 py-1 rounded">Save Workout</button>
+      <h3 class="mt-4 font-bold">Recent Workouts</h3>
+      <ul id="workoutList"></ul>
+    </div>
+
+    <!-- Meals -->
+    <div id="meals" class="tab-content hidden p-6">
+      <h2 class="text-xl font-bold mb-4">Log Meal</h2>
+      <select id="mealType" class="border p-2 rounded w-full mb-2">
+        <option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snack</option>
+      </select>
+      <input id="mealName" placeholder="Meal name" class="border p-2 rounded w-full mb-2"/>
+      <input id="mealCalories" type="number" placeholder="Calories" class="border p-2 rounded w-full mb-2"/>
+      <button onclick="addMeal()" class="bg-orange-500 text-white px-3 py-1 rounded">Save Meal</button>
+      <h3 class="mt-4 font-bold">Today's Meals</h3>
+      <ul id="mealList"></ul>
+    </div>
+
+    <!-- Sleep -->
+    <div id="sleep" class="tab-content hidden p-6">
+      <h2 class="text-xl font-bold mb-4">Sleep Tracking</h2>
+      <input id="bedtime" type="time" class="border p-2 rounded w-full mb-2"/>
+      <input id="wakeTime" type="time" class="border p-2 rounded w-full mb-2"/>
+      <select id="sleepQuality" class="border p-2 rounded w-full mb-2">
+        <option>Good</option><option>Average</option><option>Poor</option>
+      </select>
+      <button onclick="addSleep()" class="bg-purple-500 text-white px-3 py-1 rounded">Save Sleep Data</button>
+      <h3 class="mt-4 font-bold">Sleep History</h3>
+      <ul id="sleepList"></ul>
+    </div>
+
+    <!-- Hydration -->
+    <div id="hydration" class="tab-content hidden p-6">
+      <h2 class="text-xl font-bold mb-4">Hydration</h2>
+      <button onclick="addWater()" class="bg-blue-400 text-white px-3 py-1 rounded">+ Add Glass</button>
+      <p class="mt-2">Glasses Today: <span id="waterGlasses">0</span></p>
+    </div>
+
+    <!-- Mood -->
+    <div id="mood" class="tab-content hidden p-6">
+      <h2 class="text-xl font-bold mb-4">Mood Tracker</h2>
+      <select id="moodSelect" class="border p-2 rounded w-full mb-2">
+        <option>😀 Happy</option><option>😐 Neutral</option><option>😢 Sad</option>
+      </select>
+      <button onclick="saveMood()" class="bg-green-500 text-white px-3 py-1 rounded">Save Mood</button>
+      <h3 class="mt-4 font-bold">Mood History</h3>
+      <ul id="moodList"></ul>
+    </div>
+
+    <!-- Friends -->
+    <div id="friends" class="tab-content hidden p-6">
+      <h2 class="text-xl font-bold mb-4">Friends</h2>
+      <input id="friendName" placeholder="Add friend..." class="border p-2 rounded"/>
+      <button onclick="addFriend()" class="bg-pink-500 text-white px-3 py-1 rounded ml-2">Add</button>
+      <ul id="friendList" class="mt-4"></ul>
+    </div>
+  </div>
 
   <script>
-    // ======= PAGE TOGGLE =======
-    function showLogin(){
-      document.getElementById("loginPage").classList.remove("hidden");
-      document.getElementById("signupPage").classList.add("hidden");
-      document.getElementById("dashboardPage").classList.add("hidden");
-    }
-    function showSignup(){
-      document.getElementById("loginPage").classList.add("hidden");
-      document.getElementById("signupPage").classList.remove("hidden");
-    }
-    function showDashboard(){
-      document.getElementById("loginPage").classList.add("hidden");
-      document.getElementById("signupPage").classList.add("hidden");
-      document.getElementById("dashboardPage").classList.remove("hidden");
+    let currentUser = null;
+
+    function toggleSignup(){
+      document.getElementById("signupForm").classList.toggle("hidden");
     }
 
-    // ======= AUTH LOGIC (Dummy for now) =======
-    function login(){
-      const email = document.getElementById("loginEmail").value;
-      const pass = document.getElementById("loginPassword").value;
-      if(email && pass){
-        showDashboard();
-        const today = new Date().toLocaleDateString();
-        document.getElementById("userInfo").innerText = email + " | " + today;
-      } else {
-        alert("Enter email & password!");
-      }
+    async function signup(){
+      const username = document.getElementById("signupUsername").value;
+      const password = document.getElementById("signupPassword").value;
+      const res = await fetch("/register", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username,password})});
+      alert((await res.json()).message || "Error");
     }
 
-    function signup(){
-      const name = document.getElementById("signupName").value;
-      const email = document.getElementById("signupEmail").value;
-      const pass = document.getElementById("signupPassword").value;
-      if(name && email && pass){
-        alert("Signup successful! Please login.");
-        showLogin();
-      } else {
-        alert("Fill all fields!");
-      }
+    async function login(){
+      const username = document.getElementById("loginUsername").value;
+      const password = document.getElementById("loginPassword").value;
+      const res = await fetch("/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username,password})});
+      const data = await res.json();
+      if(data.userId){
+        currentUser = data.userId;
+        document.getElementById("authPage").classList.add("hidden");
+        document.getElementById("dashboardPage").classList.remove("hidden");
+        document.getElementById("userInfo").innerText = username;
+      } else alert("Invalid login");
     }
 
     function logout(){
-      alert("Logging out...");
-      showLogin();
+      currentUser = null;
+      document.getElementById("dashboardPage").classList.add("hidden");
+      document.getElementById("authPage").classList.remove("hidden");
     }
 
-    // ======= NAVIGATION HANDLER =======
-    document.querySelectorAll(".nav-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll(".tab-content").forEach(sec => sec.classList.add("hidden"));
-        document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("font-semibold","text-gray-700"));
-        document.getElementById(btn.dataset.target).classList.remove("hidden");
-        btn.classList.add("font-semibold","text-gray-700");
+    // Tabs
+    document.querySelectorAll(".tab-btn").forEach(btn=>{
+      btn.addEventListener("click",()=>{
+        document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("nav-active"));
+        btn.classList.add("nav-active");
+        document.querySelectorAll(".tab-content").forEach(tab=>tab.classList.add("hidden"));
+        document.getElementById(btn.dataset.tab).classList.remove("hidden");
       });
     });
 
-    // ======= DASHBOARD DATA =======
-    let waterCount = 0;
-    function addGlass(){
-      waterCount++;
-      document.getElementById("waterGlasses").innerText = waterCount + " glasses";
-    }
-
-    function downloadReport(){
-      const data = [
-        ["Date","Water","Sleep","Exercise","Study"],
-        ["2025-08-21",8,7,30,5],
-        ["2025-08-22",6,6,20,4]
-      ];
-      let csv = data.map(r => r.join(",")).join("\n");
-      const blob = new Blob([csv], {type:"text/csv"});
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "report.csv";
-      a.click();
-    }
-
-    // ======= CHARTS =======
-    function createChart(id,label,data){
-      new Chart(document.getElementById(id), {
-        type: 'line',
-        data: { labels: ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"],
-          datasets: [{ label: label, data: data, borderColor: "blue", fill: false }] },
-        options: { responsive: true }
-      });
-    }
-    createChart("caloriesChart","Calories",[1800,2000,1900,2100,2200,2000,1950]);
-    createChart("workoutsChart","Workouts",[1,0,1,1,0,1,2]);
-    createChart("mealsChart","Meals Logged",[3,2,3,3,2,4,3]);
-    createChart("hydrationChart","Water Glasses",[6,7,8,5,6,7,8]);
-
-    // start with login page
-    showLogin();
+    // Dummy local functions (connect to backend later)
+    function addHabit(){ let h=document.getElementById("newHabit").value; if(h){let li=document.createElement("li");li.innerText=h;document.getElementById("habitList").appendChild(li);} }
+    function addWorkout(){ let t=document.getElementById("workoutType").value; let li=document.createElement("li"); li.innerText=t; document.getElementById("workoutList").appendChild(li);}
+    function addMeal(){ let m=document.getElementById("mealName").value; let li=document.createElement("li"); li.innerText=m; document.getElementById("mealList").appendChild(li);}
+    function addSleep(){ let b=document.getElementById("bedtime").value; let li=document.createElement("li"); li.innerText="Sleep "+b; document.getElementById("sleepList").appendChild(li);}
+    function addWater(){ let w=document.getElementById("waterGlasses"); w.innerText=parseInt(w.innerText)+1; }
+    function saveMood(){ let m=document.getElementById("moodSelect").value; let li=document.createElement("li"); li.innerText=m; document.getElementById("moodList").appendChild(li);}
+    function addFriend(){ let f=document.getElementById("friendName").value; let li=document.createElement("li"); li.innerText=f; document.getElementById("friendList").appendChild(li);}
   </script>
 </body>
 </html>
