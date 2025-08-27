@@ -3,212 +3,187 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Health Tracker App</title>
-  <!-- Tailwind -->
+  <title>Health Tracker</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    .glass {
-      background: rgba(255, 255, 255, 0.15);
-      backdrop-filter: blur(15px);
-      -webkit-backdrop-filter: blur(15px);
-      border-radius: 16px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-  </style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-blue-400 to-blue-900 text-white">
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
 
   <!-- LOGIN PAGE -->
-  <section id="loginPage" class="min-h-screen flex items-center justify-center">
-    <div class="glass w-[400px] p-8 shadow-2xl">
-      <h2 class="text-2xl font-bold text-center mb-6">Login</h2>
-      <input id="loginEmail" type="email" placeholder="Email" class="w-full px-4 py-2 mb-3 rounded-lg text-black">
-      <input id="loginPassword" type="password" placeholder="Password" class="w-full px-4 py-2 mb-3 rounded-lg text-black">
-      <button onclick="goDashboard()" class="w-full py-2 bg-blue-600 hover:bg-blue-700 rounded-lg">Sign In</button>
-      <p class="mt-4 text-center text-sm">
-        Don’t have an account? 
-        <a href="#" onclick="showPage('signupPage')" class="text-blue-300">Register free</a>
-      </p>
-    </div>
+  <section id="loginPage" class="w-full max-w-md bg-white p-6 rounded-lg shadow-md">
+    <h2 class="text-2xl font-bold mb-4 text-center">Login</h2>
+    <input id="loginEmail" type="email" placeholder="Email" class="w-full mb-3 p-2 border rounded">
+    <input id="loginPassword" type="password" placeholder="Password" class="w-full mb-3 p-2 border rounded">
+    <button onclick="login()" class="w-full bg-blue-500 text-white py-2 rounded">Login</button>
+    <p class="mt-4 text-sm text-gray-600 text-center">
+      Don’t have an account? <a href="#" onclick="showSignup()" class="text-blue-500">Sign Up</a>
+    </p>
   </section>
 
-  <!-- SIGN UP PAGE -->
-  <section id="signupPage" class="hidden min-h-screen flex items-center justify-center">
-    <div class="glass w-[400px] p-8 shadow-2xl">
-      <h2 class="text-2xl font-bold text-center mb-6">Sign Up</h2>
-      <input id="signupName" type="text" placeholder="Full Name" class="w-full px-4 py-2 mb-3 rounded-lg text-black">
-      <input id="signupEmail" type="email" placeholder="Email" class="w-full px-4 py-2 mb-3 rounded-lg text-black">
-      <input id="signupPassword" type="password" placeholder="Password" class="w-full px-4 py-2 mb-3 rounded-lg text-black">
-      <input id="signupConfirm" type="password" placeholder="Confirm Password" class="w-full px-4 py-2 mb-3 rounded-lg text-black">
-      <button onclick="completeSignup()" class="w-full py-2 bg-green-600 hover:bg-green-700 rounded-lg">Register</button>
-      <p class="mt-4 text-center text-sm">
-        Already have an account? 
-        <a href="#" onclick="showPage('loginPage')" class="text-blue-300">Login</a>
-      </p>
-    </div>
+  <!-- SIGNUP PAGE -->
+  <section id="signupPage" class="hidden w-full max-w-md bg-white p-6 rounded-lg shadow-md">
+    <h2 class="text-2xl font-bold mb-4 text-center">Sign Up</h2>
+    <input id="signupName" type="text" placeholder="Name" class="w-full mb-3 p-2 border rounded">
+    <input id="signupEmail" type="email" placeholder="Email" class="w-full mb-3 p-2 border rounded">
+    <input id="signupPassword" type="password" placeholder="Password" class="w-full mb-3 p-2 border rounded">
+    <button onclick="signup()" class="w-full bg-green-500 text-white py-2 rounded">Sign Up</button>
+    <p class="mt-4 text-sm text-gray-600 text-center">
+      Already have an account? <a href="#" onclick="showLogin()" class="text-blue-500">Login</a>
+    </p>
   </section>
 
   <!-- DASHBOARD -->
-  <section id="dashboardPage" class="hidden">
-    <!-- Top Nav -->
-    <header class="flex justify-between items-center px-6 py-4 bg-white/10 backdrop-blur-md">
-      <nav class="flex space-x-6">
-        <a href="#" class="font-semibold">Dashboard</a>
-        <a href="#">Habits</a>
-        <a href="#">Workouts</a>
-        <a href="#">Meals</a>
-        <a href="#">Sleep</a>
-        <a href="#">Mood</a>
-        <a href="#">Friends</a>
-      </nav>
-      <div class="flex items-center space-x-4">
-        <div>
-          <p id="userName" class="font-semibold">User</p>
-          <p class="text-sm opacity-80" id="currentDate"></p>
-        </div>
-        <button onclick="logout()" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg">Logout</button>
+  <section id="dashboardPage" class="hidden w-full">
+    <!-- Navbar -->
+    <nav class="bg-white shadow-md p-4 flex justify-between items-center">
+      <div class="flex space-x-6">
+        <button class="nav-btn font-semibold text-gray-700" data-target="dashboard">Dashboard</button>
+        <button class="nav-btn text-gray-600" data-target="habits">Habits</button>
+        <button class="nav-btn text-gray-600" data-target="workouts">Workouts</button>
+        <button class="nav-btn text-gray-600" data-target="meals">Meals</button>
+        <button class="nav-btn text-gray-600" data-target="sleep">Sleep</button>
+        <button class="nav-btn text-gray-600" data-target="mood">Mood</button>
+        <button class="nav-btn text-gray-600" data-target="friends">Friends</button>
       </div>
-    </header>
+      <div class="flex space-x-4 items-center">
+        <span id="userInfo" class="text-gray-600">User | Date</span>
+        <button onclick="logout()" class="bg-red-500 text-white px-3 py-1 rounded">Logout</button>
+      </div>
+    </nav>
 
-    <!-- Dashboard Body -->
-    <main class="p-6 space-y-8">
-      <!-- Top Cards -->
-      <section class="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div class="glass p-4 shadow-lg">
-          <h3 class="font-semibold">Habit Streak</h3>
-          <p class="text-2xl font-bold">🔥 12 Days</p>
-          <p class="text-sm opacity-80">3/4 habits today</p>
-        </div>
-        <div class="glass p-4 shadow-lg">
-          <h3 class="font-semibold">Workouts This Week</h3>
-          <p class="text-2xl font-bold">5</p>
-          <p class="text-sm opacity-80">Target: 4</p>
-        </div>
-        <div class="glass p-4 shadow-lg">
-          <h3 class="font-semibold">Calories Today</h3>
-          <p class="text-2xl font-bold">1,850 / 2,200 kcal</p>
-        </div>
-        <div class="glass p-4 shadow-lg flex justify-between items-center">
-          <div>
-            <h3 class="font-semibold">Hydration</h3>
-            <p class="text-2xl font-bold" id="waterCount">6 / 8</p>
+    <!-- Dashboard Content -->
+    <div class="p-6">
+      <!-- DASHBOARD SECTION -->
+      <section id="dashboard" class="tab-content">
+        <h2 class="text-xl font-bold mb-4">Today Overview</h2>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div class="bg-white p-4 rounded shadow">Habit Streak<br><span id="habitStreak">0 Days</span></div>
+          <div class="bg-white p-4 rounded shadow">Workouts This Week<br><span id="workoutsCount">0</span></div>
+          <div class="bg-white p-4 rounded shadow">Calories Today<br><span id="calories">0 / 2000 kcal</span></div>
+          <div class="bg-white p-4 rounded shadow flex flex-col items-center">
+            Hydration<br><span id="waterGlasses">0 glasses</span>
+            <button onclick="addGlass()" class="bg-blue-500 text-white px-2 py-1 rounded mt-2">+ Add Glass</button>
           </div>
-          <button onclick="addGlass()" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg">+ Glass</button>
         </div>
-      </section>
 
-      <!-- Trends -->
-      <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="glass p-4">
-          <h3 class="mb-2 font-semibold">Calories (Last 7 Days)</h3>
+        <!-- Charts -->
+        <h2 class="text-xl font-bold mb-4">Trends (Last 7 Days)</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <canvas id="caloriesChart"></canvas>
-        </div>
-        <div class="glass p-4">
-          <h3 class="mb-2 font-semibold">Workouts (Last 7 Days)</h3>
           <canvas id="workoutsChart"></canvas>
-        </div>
-        <div class="glass p-4">
-          <h3 class="mb-2 font-semibold">Meals (Last 7 Days)</h3>
           <canvas id="mealsChart"></canvas>
-        </div>
-        <div class="glass p-4">
-          <h3 class="mb-2 font-semibold">Hydration (Last 7 Days)</h3>
           <canvas id="hydrationChart"></canvas>
         </div>
+
+        <div class="mt-6">
+          <button onclick="downloadReport()" class="bg-green-500 text-white px-4 py-2 rounded">Download Full Report (CSV)</button>
+        </div>
       </section>
 
-      <!-- Download Report -->
-      <div class="flex justify-end">
-        <button onclick="downloadCSV()" class="px-5 py-2 bg-green-600 hover:bg-green-700 rounded-lg">
-          ⬇ Download Full Report (CSV)
-        </button>
-      </div>
-    </main>
+      <!-- Other Sections -->
+      <section id="habits" class="tab-content hidden"><h2 class="text-2xl font-bold mb-4">Habits</h2><p>Track your daily habits...</p></section>
+      <section id="workouts" class="tab-content hidden"><h2 class="text-2xl font-bold mb-4">Workouts</h2><p>Log your workouts...</p></section>
+      <section id="meals" class="tab-content hidden"><h2 class="text-2xl font-bold mb-4">Meals</h2><p>Log your meals...</p></section>
+      <section id="sleep" class="tab-content hidden"><h2 class="text-2xl font-bold mb-4">Sleep</h2><p>Track your sleep...</p></section>
+      <section id="mood" class="tab-content hidden"><h2 class="text-2xl font-bold mb-4">Mood</h2><p>Log your mood...</p></section>
+      <section id="friends" class="tab-content hidden"><h2 class="text-2xl font-bold mb-4">Friends</h2><p>Connect with friends...</p></section>
+    </div>
   </section>
 
-  <!-- JS -->
   <script>
-    // Show/Hide Pages
-    function showPage(pageId) {
-      document.getElementById("loginPage").classList.add("hidden");
+    // ======= PAGE TOGGLE =======
+    function showLogin(){
+      document.getElementById("loginPage").classList.remove("hidden");
       document.getElementById("signupPage").classList.add("hidden");
       document.getElementById("dashboardPage").classList.add("hidden");
-      document.getElementById(pageId).classList.remove("hidden");
+    }
+    function showSignup(){
+      document.getElementById("loginPage").classList.add("hidden");
+      document.getElementById("signupPage").classList.remove("hidden");
+    }
+    function showDashboard(){
+      document.getElementById("loginPage").classList.add("hidden");
+      document.getElementById("signupPage").classList.add("hidden");
+      document.getElementById("dashboardPage").classList.remove("hidden");
     }
 
-    // Signup completes -> go back to login
-    function completeSignup() {
-      alert("Signup successful! Please login.");
-      showPage("loginPage");
-    }
-
-    // Login -> Dashboard
-    function goDashboard() {
+    // ======= AUTH LOGIC (Dummy for now) =======
+    function login(){
       const email = document.getElementById("loginEmail").value;
-      document.getElementById("userName").textContent = email.split("@")[0] || "User";
-      document.getElementById("currentDate").textContent = new Date().toDateString();
-      showPage("dashboardPage");
-      initCharts();
-    }
-
-    // Logout -> back to login
-    function logout() {
-      showPage("loginPage");
-    }
-
-    // Hydration tracker
-    let waterCount = 6;
-    function addGlass() {
-      if (waterCount < 8) {
-        waterCount++;
-        document.getElementById("waterCount").textContent = `${waterCount} / 8`;
+      const pass = document.getElementById("loginPassword").value;
+      if(email && pass){
+        showDashboard();
+        const today = new Date().toLocaleDateString();
+        document.getElementById("userInfo").innerText = email + " | " + today;
+      } else {
+        alert("Enter email & password!");
       }
     }
 
-    // CSV Download
-    function downloadCSV() {
-      const rows = [
-        ["Date", "Calories", "Workouts", "Meals", "Hydration"],
-        ["Mon", 2000, 1, 3, 8],
-        ["Tue", 1800, 0, 2, 6],
-        ["Wed", 2200, 1, 3, 7],
-        ["Thu", 1900, 1, 2, 8],
-        ["Fri", 2100, 0, 3, 7],
-        ["Sat", 2300, 1, 4, 8],
-        ["Sun", 2000, 1, 3, 6],
-      ];
-      let csvContent = "data:text/csv;charset=utf-8," 
-        + rows.map(e => e.join(",")).join("\n");
-      const link = document.createElement("a");
-      link.setAttribute("href", encodeURI(csvContent));
-      link.setAttribute("download", "health_report.csv");
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+    function signup(){
+      const name = document.getElementById("signupName").value;
+      const email = document.getElementById("signupEmail").value;
+      const pass = document.getElementById("signupPassword").value;
+      if(name && email && pass){
+        alert("Signup successful! Please login.");
+        showLogin();
+      } else {
+        alert("Fill all fields!");
+      }
     }
 
-    // Init Charts
-    function initCharts() {
-      const labels = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-      new Chart(document.getElementById("caloriesChart"), {
-        type: "line",
-        data: { labels, datasets: [{ label: "Calories", data: [2000,1800,2200,1900,2100,2300,2000], borderColor: "white", fill: false }] }
+    function logout(){
+      alert("Logging out...");
+      showLogin();
+    }
+
+    // ======= NAVIGATION HANDLER =======
+    document.querySelectorAll(".nav-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab-content").forEach(sec => sec.classList.add("hidden"));
+        document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("font-semibold","text-gray-700"));
+        document.getElementById(btn.dataset.target).classList.remove("hidden");
+        btn.classList.add("font-semibold","text-gray-700");
       });
-      new Chart(document.getElementById("workoutsChart"), {
-        type: "bar",
-        data: { labels, datasets: [{ label: "Workouts", data: [1,0,1,1,0,1,1], backgroundColor: "rgba(255,255,255,0.7)" }] }
-      });
-      new Chart(document.getElementById("mealsChart"), {
-        type: "line",
-        data: { labels, datasets: [{ label: "Meals", data: [3,2,3,2,3,4,3], borderColor: "yellow", fill: false }] }
-      });
-      new Chart(document.getElementById("hydrationChart"), {
-        type: "bar",
-        data: { labels, datasets: [{ label: "Glasses", data: [8,6,7,8,7,8,6], backgroundColor: "rgba(0,200,255,0.7)" }] }
+    });
+
+    // ======= DASHBOARD DATA =======
+    let waterCount = 0;
+    function addGlass(){
+      waterCount++;
+      document.getElementById("waterGlasses").innerText = waterCount + " glasses";
+    }
+
+    function downloadReport(){
+      const data = [
+        ["Date","Water","Sleep","Exercise","Study"],
+        ["2025-08-21",8,7,30,5],
+        ["2025-08-22",6,6,20,4]
+      ];
+      let csv = data.map(r => r.join(",")).join("\n");
+      const blob = new Blob([csv], {type:"text/csv"});
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "report.csv";
+      a.click();
+    }
+
+    // ======= CHARTS =======
+    function createChart(id,label,data){
+      new Chart(document.getElementById(id), {
+        type: 'line',
+        data: { labels: ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"],
+          datasets: [{ label: label, data: data, borderColor: "blue", fill: false }] },
+        options: { responsive: true }
       });
     }
+    createChart("caloriesChart","Calories",[1800,2000,1900,2100,2200,2000,1950]);
+    createChart("workoutsChart","Workouts",[1,0,1,1,0,1,2]);
+    createChart("mealsChart","Meals Logged",[3,2,3,3,2,4,3]);
+    createChart("hydrationChart","Water Glasses",[6,7,8,5,6,7,8]);
+
+    // start with login page
+    showLogin();
   </script>
 </body>
 </html>
