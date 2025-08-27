@@ -1,149 +1,118 @@
-// index.js
-
-const express = require("express");
-const cors = require("cors");
-const sqlite3 = require("sqlite3").verbose();
+import express from "express";
+import cors from "cors";
+import bcrypt from "bcrypt";
+import sqlite3 from "sqlite3";
+import { open } from "sqlite";
 
 const app = express();
-const PORT = process.env.PORT || 10000;
-
-// ===== CORS Setup =====
-// Replace with your actual Vercel frontend URL in production
-app.use(cors({
-  origin: "*" // e.g., "https://your-frontend.vercel.app"
-}));
-
+app.use(cors());
 app.use(express.json());
 
-// ===== SQLite Database =====
-const db = new sqlite3.Database("./health_tracker.db", (err) => {
-  if (err) console.error("❌ SQLite error:", err.message);
-  else console.log("✅ Connected to SQLite database");
-});
+let db;
 
-// ===== Table Creation =====
-db.serialize(() => {
-  db.run(`
+// ====================== DB INIT ======================
+async function initDB() {
+  db = await open({
+    filename: "./health.db",
+    driver: sqlite3.Database,
+  });
+
+  // Users table
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT UNIQUE,
+      name TEXT,
+      email TEXT UNIQUE,
       password TEXT
     )
   `);
 
-  db.run(`
-    CREATE TABLE IF NOT EXISTS records (
+  // Health data table
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS health_data (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER,
-      date TEXT,
-      water INTEGER,
-      sleep INTEGER,
-      exercise INTEGER,
-      study INTEGER,
+      type TEXT,
+      entry TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY(user_id) REFERENCES users(id)
     )
   `);
-});
 
-// ===== Routes =====
+  console.log("SQLite DB initialized ✅");
+}
 
-// Health check
-app.get("/", (req, res) => {
-  res.send("🌿 Health Tracker API is running!");
-});
+// ====================== AUTH ROUTES ======================
 
-// User Registration
-app.post("/register", (req, res) => {
-  const { username, password } = req.body;
+// Register
+app.post("/api/register", async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    const hashed = await bcrypt.hash(password, 10);
 
-  if (!username || !password) {
-    return res.status(400).json({ error: "Username and password required" });
+    await db.run(
+      "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
+      [name, email, hashed]
+    );
+
+    res.json({ success: true, message: "User registered!" });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
   }
-
-  db.run(
-    `INSERT INTO users (username, password) VALUES (?, ?)`,
-    [username, password],
-    function (err) {
-      if (err) {
-        return res.status(409).json({ error: "Username already exists" });
-      }
-      res.json({ message: "Registered successfully" });
-    }
-  );
 });
 
-// User Login
-app.post("/login", (req, res) => {
-  const { username, password } = req.body;
+// Login
+app.post("/api/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await db.get("SELECT * FROM users WHERE email = ?", [email]);
 
-  db.get(
-    `SELECT id FROM users WHERE username = ? AND password = ?`,
-    [username, password],
-    (err, row) => {
-      if (err || !row) {
-        return res.status(401).json({ error: "Invalid credentials" });
-      }
-      res.json({ userId: row.id });
-    }
-  );
-});
+    if (!user) return res.status(401).json({ error: "User not found" });
 
-// Add or Update Daily Record
-app.post("/update", (req, res) => {
-  const { userId, date, water, sleep, exercise, study } = req.body;
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) return res.status(401).json({ error: "Invalid password" });
 
-  if (!userId || !date) {
-    return res.status(400).json({ error: "Missing userId or date" });
+    res.json({
+      success: true,
+      user: { id: user.id, name: user.name, email: user.email },
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-
-  db.get(
-    `SELECT id FROM records WHERE user_id = ? AND date = ?`,
-    [userId, date],
-    (err, row) => {
-      if (err) {
-        return res.status(500).json({ error: "Database error" });
-      }
-
-      if (row) {
-        // Update existing record
-        db.run(
-          `UPDATE records SET water = ?, sleep = ?, exercise = ?, study = ? WHERE id = ?`,
-          [water, sleep, exercise, study, row.id],
-          function () {
-            res.json({ message: "Updated record" });
-          }
-        );
-      } else {
-        // Insert new record
-        db.run(
-          `INSERT INTO records (user_id, date, water, sleep, exercise, study) VALUES (?, ?, ?, ?, ?, ?)`,
-          [userId, date, water, sleep, exercise, study],
-          function () {
-            res.json({ message: "Added record" });
-          }
-        );
-      }
-    }
-  );
 });
 
-// Get Dashboard Data
-app.get("/dashboard/:userId", (req, res) => {
-  const { userId } = req.params;
+// ====================== DATA ROUTES ======================
 
-  db.all(
-    `SELECT * FROM records WHERE user_id = ? ORDER BY date DESC`,
-    [userId],
-    (err, rows) => {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-      res.json(rows);
-    }
-  );
+// Add health entry (habit, workout, meal, sleep, mood)
+app.post("/api/data", async (req, res) => {
+  try {
+    const { user_id, type, entry } = req.body;
+    await db.run(
+      "INSERT INTO health_data (user_id, type, entry) VALUES (?, ?, ?)",
+      [user_id, type, entry]
+    );
+    res.json({ success: true, message: "Entry added" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// ===== Start Server =====
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+// Get all entries for a user
+app.get("/api/data/:user_id", async (req, res) => {
+  try {
+    const rows = await db.all(
+      "SELECT * FROM health_data WHERE user_id = ? ORDER BY created_at DESC",
+      [req.params.user_id]
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ====================== SERVER ======================
+const PORT = process.env.PORT || 5000;
+
+initDB().then(() => {
+  app.listen(PORT, () => console.log(`Server running on port ${PORT} 🚀`));
 });
