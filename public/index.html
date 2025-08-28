@@ -1,249 +1,99 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Health Tracker — All-in-One</title>
-<style>
-  html, body { height:100%; margin:0; padding:0; font-family:'Segoe UI', Arial, sans-serif; }
-  body { background: linear-gradient(120deg, #a2d4f6 60%, #023e8a 100%); display:flex; justify-content:center; align-items:center; flex-direction:column; min-height:100vh; position:relative; overflow:hidden; }
-  body::before, body::after {
-    content:""; position:absolute; border-radius:40% 60% 60% 40% / 60% 40% 60% 40%; opacity:0.33; z-index:0;
-  }
-  body::before { top:-100px; left:-100px; width:350px; height:350px; background:#90e0ef; }
-  body::after { right:-120px; bottom:-160px; width:400px; height:300px; background:#0077b6; }
-
-  .container { position:relative; z-index:1; width:100%; max-width:600px; margin:auto; color:#fff; }
-
-  .login-form, .dashboard { background: rgba(255,255,255,0.14); box-shadow:0 8px 32px rgba(31,38,135,0.18); border-radius:22px; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); padding:34px 32px; display:none; }
-
-  .login-form.active { display:block; }
-  .dashboard.active { display:block; }
-
-  h2 { margin:0 0 12px 0; font-size:2rem; font-weight:600; letter-spacing:1px; text-align:center; }
-  label { display:block; text-align:left; margin:13px 0 3px 1px; font-size:1.04rem; }
-  input { width:100%; padding:10px 12px; border-radius:7px; border:none; margin-bottom:7px; outline:none; }
-  .signin-btn { width:100%; padding:11px 0; background:#023e8a; color:#fff; font-weight:bold; border-radius:7px; border:none; cursor:pointer; margin-bottom:18px; }
-  .signin-btn:hover { background:#0077b6; }
-  .toggle-link { text-align:center; margin-top:10px; cursor:pointer; color:#48cae4; display:block; }
-
-  .dashboard h3 { color:#fff; margin-top:0; }
-  .section { margin-bottom:20px; background:rgba(0,0,0,0.2); padding:15px; border-radius:10px; }
-  .section ul { padding-left:15px; }
-  .section li { margin-bottom:5px; }
-  .section input { margin-bottom:5px; width:calc(100% - 10px); }
-  .section button { background:#0077b6; color:#fff; border:none; border-radius:5px; padding:5px 10px; cursor:pointer; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login UI</title>
+  <style>
+    /* Your original styles remain unchanged */
+    html, body { height:100%; margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Arial, sans-serif;}
+    body {min-height:100vh; width:100vw; background:linear-gradient(120deg,#a2d4f6 60%,#023e8a 100%); overflow:hidden; display:flex; align-items:center; justify-content:center; position:relative;}
+    body::before, body::after {content:""; position:absolute; border-radius:40% 60% 60% 40% / 60% 40% 60% 40%; opacity:0.33; z-index:0;}
+    body::before {top:-100px; left:-100px; width:350px; height:350px; background:#90e0ef;}
+    body::after {right:-120px; bottom:-160px; width:400px; height:300px; background:#0077b6;}
+    .login-container {position:relative; z-index:1; width:100%; max-width:425px; margin:auto;}
+    .login-form {background: rgba(255,255,255,0.14); box-shadow: 0 8px 32px 0 rgba(31,38,135,0.18); border-radius:22px; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); padding:34px 32px 25px 32px; color:#fff; text-align:center;}
+    .logo {font-size:1.1rem; font-weight:600; margin-bottom:17px; color:#fff;}
+    h2 {margin:0 0 12px 0; letter-spacing:1px; font-size:2rem; font-weight:600;}
+    label {display:block; text-align:left; margin:13px 0 3px 1px; font-size:1.04rem; color:#e0e0e0;}
+    input[type="email"], input[type="password"] {width:100%; padding:10px 12px; border-radius:7px; border:none; margin-bottom:7px; background:rgba(255,255,255,0.27); color:#252525; font-size:1rem; outline:none;}
+    input::placeholder {color:#bdbdbd;}
+    .forgot {text-align:right; margin-bottom:14px; font-size:0.96rem;}
+    .forgot a {color:#caf0f8; text-decoration:none;}
+    .signin-btn {width:100%; padding:11px 0; background:#023e8a; color:#fff; font-weight:bold; border-radius:7px; border:none; font-size:1.07rem; cursor:pointer; margin-bottom:18px; transition: background 0.18s;}
+    .signin-btn:hover {background:#0077b6;}
+    .divider {color:#cde7f8; font-size:0.97rem; margin:8px 0 11px 0;}
+    .social-login {display:flex; justify-content:center; gap:15px; margin-bottom:17px;}
+    .social {width:36px; height:36px; border-radius:50%; border:none; background:#fff; cursor:pointer; box-shadow:0 2px 5px 0 rgba(44,62,80,0.09); transition:transform 0.17s; display:flex; align-items:center; justify-content:center; padding:0;}
+    .social:hover {transform:scale(1.09);}
+    .social.google { background: #fff url('https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg') center/60% no-repeat; }
+    .social.github { background: #fff url('https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg') center/60% no-repeat; }
+    .social.apple  { background: #fff url('https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg') center/55% no-repeat; }
+    .register {font-size:1rem; color:#f0fafc; margin-top:7px;}
+    .register a {color:#48cae4; text-decoration:none; font-weight:bold;}
+    @media (max-width:600px){.login-form{padding:18px 5vw; border-radius:15px;} .login-container{max-width:96vw;}}
+  </style>
 </head>
 <body>
-<div class="container">
-
-  <!-- LOGIN FORM -->
-  <div class="login-form" id="login-box">
-    <h2>Login</h2>
-    <form id="loginForm">
-      <label>Email</label>
-      <input type="email" id="email" placeholder="username@gmail.com" required>
-      <label>Password</label>
-      <input type="password" id="password" placeholder="Password" required>
-      <button type="submit" class="signin-btn">Sign In</button>
-    </form>
-    <span class="toggle-link" onclick="toggleForms()">Don't have an account? Register</span>
+  <div class="login-container">
+    <div class="login-form">
+      <div class="logo">Your logo</div>
+      <h2>Login</h2>
+      <form id="loginForm">
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="username@gmail.com" required>
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="Password" required>
+        <div class="forgot"><a href="#">Forgot Password?</a></div>
+        <button type="submit" class="signin-btn">Sign in</button>
+      </form>
+      <div class="divider">or continue with</div>
+      <div class="social-login">
+        <button type="button" class="social google" title="Sign in with Google"></button>
+        <button type="button" class="social github" title="Sign in with GitHub"></button>
+        <button type="button" class="social apple" title="Sign in with Apple"></button>
+      </div>
+      <div class="register">Don't have an account? <a href="signup.html">Register for free</a></div>
+    </div>
   </div>
 
-  <!-- SIGNUP FORM -->
-  <div class="login-form" id="signup-box">
-    <h2>Register</h2>
-    <form id="signupForm">
-      <label>Full Name</label>
-      <input type="text" id="name" placeholder="John Doe" required>
-      <label>Email</label>
-      <input type="email" id="signup-email" placeholder="username@gmail.com" required>
-      <label>Password</label>
-      <input type="password" id="signup-password" placeholder="Password" required>
-      <button type="submit" class="signin-btn">Create Account</button>
-    </form>
-    <span class="toggle-link" onclick="toggleForms()">Already have an account? Login</span>
-  </div>
+  <!-- Backend Integration Script -->
+  <script>
+    const API_URL = "https://health-tracker-exp.onrender.com"; // Your Render backend
 
-  <!-- DASHBOARD -->
-  <div class="dashboard" id="dashboard">
-    <h2>Welcome, <span id="user-name"></span></h2>
+    const form = document.getElementById("loginForm");
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
 
-    <div class="section">
-      <h3>Habits</h3>
-      <ul id="habits-list"></ul>
-      <input type="text" id="new-habit" placeholder="New habit">
-      <button onclick="addHabit()">Add Habit</button>
-    </div>
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
 
-    <div class="section">
-      <h3>Workouts</h3>
-      <ul id="workouts-list"></ul>
-      <input type="text" id="workout-type" placeholder="Workout type">
-      <input type="number" id="workout-duration" placeholder="Duration (min)">
-      <button onclick="addWorkout()">Add Workout</button>
-    </div>
+      const username = emailInput.value.trim();
+      const password = passwordInput.value.trim();
 
-    <div class="section">
-      <h3>Meals</h3>
-      <ul id="meals-list"></ul>
-      <input type="text" id="meal-name" placeholder="Meal name">
-      <input type="number" id="meal-calories" placeholder="Calories">
-      <button onclick="addMeal()">Add Meal</button>
-    </div>
+      try {
+        const res = await fetch(`${API_URL}/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password })
+        });
 
-    <div class="section">
-      <h3>Sleep</h3>
-      <ul id="sleep-list"></ul>
-      <input type="number" id="sleep-hours" placeholder="Hours">
-      <input type="date" id="sleep-date">
-      <button onclick="addSleep()">Add Sleep</button>
-    </div>
+        const data = await res.json();
 
-    <div class="section">
-      <h3>Mood</h3>
-      <ul id="mood-list"></ul>
-      <input type="text" id="mood-text" placeholder="Mood">
-      <input type="date" id="mood-date">
-      <button onclick="addMood()">Add Mood</button>
-    </div>
-
-    <button onclick="logout()" style="background:red;margin-top:10px;">Logout</button>
-  </div>
-
-</div>
-
-<script>
-let user = JSON.parse(localStorage.getItem('user'));
-
-// Use relative paths because backend serves frontend
-const API = '';
-
-function toggleForms() {
-  document.getElementById('login-box').classList.toggle('active');
-  document.getElementById('signup-box').classList.toggle('active');
-}
-
-// Show dashboard if user logged in
-if(user){
-  showDashboard();
-}else{
-  document.getElementById('login-box').classList.add('active');
-}
-
-// LOGIN
-document.getElementById("loginForm").addEventListener("submit", async e=>{
-  e.preventDefault();
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-  try {
-    const res = await fetch(`${API}/login`, {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body:JSON.stringify({ username:email, password })
+        if (data.userId) {
+          alert("Login successful!");
+          // Save user ID in localStorage/session if needed
+          localStorage.setItem("userId", data.userId);
+          // Redirect to dashboard
+          window.location.href = "dashboard.html";
+        } else {
+          alert(data.error || "Login failed");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Error connecting to backend");
+      }
     });
-    const data = await res.json();
-    if(data.success){
-      user = data.user || { id:data.userId, name:email };
-      localStorage.setItem('user', JSON.stringify(user));
-      showDashboard();
-    } else alert(data.message);
-  } catch(err){ alert(err.message); }
-});
-
-// SIGNUP
-document.getElementById("signupForm").addEventListener("submit", async e=>{
-  e.preventDefault();
-  const name = document.getElementById("name").value;
-  const email = document.getElementById("signup-email").value;
-  const password = document.getElementById("signup-password").value;
-  try {
-    const res = await fetch(`${API}/signup`, {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body:JSON.stringify({ username:email, password })
-    });
-    const data = await res.json();
-    if(data.success){ alert("Account created! Login now."); toggleForms(); }
-    else alert(data.message);
-  } catch(err){ alert(err.message); }
-});
-
-function showDashboard(){
-  document.getElementById('login-box').style.display='none';
-  document.getElementById('signup-box').style.display='none';
-  const dash = document.getElementById('dashboard');
-  dash.classList.add('active');
-  document.getElementById('user-name').innerText = user.name || "User";
-  fetchData();
-}
-
-function logout(){
-  localStorage.removeItem('user');
-  location.reload();
-}
-
-// FETCH DATA
-async function fetchAndRender(endpoint,listId){
-  const res = await fetch(`${API}/${endpoint}/${user.id}`);
-  const data = await res.json();
-  const ul = document.getElementById(listId);
-  ul.innerHTML = '';
-  data.forEach(item=>{
-    const li = document.createElement('li');
-    li.textContent = JSON.stringify(item);
-    ul.appendChild(li);
-  });
-}
-
-async function fetchData(){
-  fetchAndRender('habits','habits-list');
-  fetchAndRender('workouts','workouts-list');
-  fetchAndRender('meals','meals-list');
-  fetchAndRender('sleep','sleep-list');
-  fetchAndRender('mood','mood-list');
-}
-
-// ADD FUNCTIONS
-async function addHabit(){ 
-  const name=document.getElementById('new-habit').value;
-  if(!name) return;
-  await fetch(`${API}/habits`,{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({userId:user.id,name}) });
-  document.getElementById('new-habit').value=''; fetchAndRender('habits','habits-list');
-}
-
-async function addWorkout(){
-  const type=document.getElementById('workout-type').value;
-  const duration=document.getElementById('workout-duration').value;
-  if(!type||!duration) return;
-  await fetch(`${API}/workouts`,{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({userId:user.id,type,duration}) });
-  document.getElementById('workout-type').value=''; document.getElementById('workout-duration').value=''; fetchAndRender('workouts','workouts-list');
-}
-
-async function addMeal(){
-  const name=document.getElementById('meal-name').value;
-  const calories=document.getElementById('meal-calories').value;
-  if(!name||!calories) return;
-  await fetch(`${API}/meals`,{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({userId:user.id,name,calories}) });
-  document.getElementById('meal-name').value=''; document.getElementById('meal-calories').value=''; fetchAndRender('meals','meals-list');
-}
-
-async function addSleep(){
-  const hours=document.getElementById('sleep-hours').value;
-  const date=document.getElementById('sleep-date').value;
-  if(!hours||!date) return;
-  await fetch(`${API}/sleep`,{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({userId:user.id,hours,date}) });
-  document.getElementById('sleep-hours').value=''; document.getElementById('sleep-date').value=''; fetchAndRender('sleep','sleep-list');
-}
-
-async function addMood(){
-  const mood=document.getElementById('mood-text').value;
-  const date=document.getElementById('mood-date').value;
-  if(!mood||!date) return;
-  await fetch(`${API}/mood`,{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({userId:user.id,mood,date}) });
-  document.getElementById('mood-text').value=''; document.getElementById('mood-date').value=''; fetchAndRender('mood','mood-list');
-}
-</script>
+  </script>
 </body>
 </html>
