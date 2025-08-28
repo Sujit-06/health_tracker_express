@@ -1,183 +1,194 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Health Tracker</title>
-<script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Health Tracker</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-gray-100">
 
-<!-- REGISTER -->
-<section id="register-section" class="min-h-screen flex items-center justify-center">
-  <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
-    <h2 class="text-2xl font-bold text-center text-blue-600 mb-6">Register</h2>
-    <form id="register-form" class="space-y-4">
-      <input type="text" id="reg-username" placeholder="Username" class="w-full p-3 border rounded-lg" required>
-      <input type="password" id="reg-password" placeholder="Password" class="w-full p-3 border rounded-lg" required>
-      <button type="submit" class="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600">Register</button>
-    </form>
-    <p class="mt-4 text-center">Already have an account? 
-      <a href="#" onclick="showLogin()" class="text-blue-600">Login</a>
-    </p>
-  </div>
-</section>
+  <!-- Login & Signup Section -->
+  <div id="auth-section" class="flex items-center justify-center min-h-screen">
+    <div class="bg-white p-8 rounded-2xl shadow-lg w-96">
+      <h1 class="text-2xl font-bold mb-6 text-center">Health Tracker</h1>
 
-<!-- LOGIN -->
-<section id="login-section" class="hidden min-h-screen flex items-center justify-center">
-  <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
-    <h2 class="text-2xl font-bold text-center text-green-600 mb-6">Login</h2>
-    <form id="login-form" class="space-y-4">
-      <input type="text" id="login-username" placeholder="Username" class="w-full p-3 border rounded-lg" required>
-      <input type="password" id="login-password" placeholder="Password" class="w-full p-3 border rounded-lg" required>
-      <button type="submit" class="w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600">Login</button>
-    </form>
-  </div>
-</section>
+      <!-- Tabs -->
+      <div class="flex justify-around mb-4">
+        <button id="login-tab" class="px-4 py-2 bg-blue-500 text-white rounded-lg">Login</button>
+        <button id="signup-tab" class="px-4 py-2 bg-gray-200 rounded-lg">Signup</button>
+      </div>
 
-<!-- DASHBOARD -->
-<section id="dashboard-section" class="hidden min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-green-50">
-  <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-5xl">
-    <h2 class="text-2xl font-bold text-center text-green-600 mb-6">Health Dashboard</h2>
+      <!-- Login Form -->
+      <form id="login-form" class="space-y-4">
+        <input type="email" id="login-email" placeholder="Email" class="w-full p-2 border rounded" required />
+        <input type="password" id="login-password" placeholder="Password" class="w-full p-2 border rounded" required />
+        <button type="submit" class="w-full bg-blue-500 text-white py-2 rounded-lg">Login</button>
+      </form>
 
-    <!-- Add Record -->
-    <form id="record-form" class="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
-      <input type="date" id="date" required class="p-2 border rounded-lg">
-      <input type="number" id="water" placeholder="Water (glasses)" required class="p-2 border rounded-lg">
-      <input type="number" id="sleep" placeholder="Sleep (hrs)" required class="p-2 border rounded-lg">
-      <input type="number" id="exercise" placeholder="Exercise (min)" required class="p-2 border rounded-lg">
-      <input type="number" id="study" placeholder="Study (hrs)" required class="p-2 border rounded-lg">
-      <button type="submit" class="col-span-1 md:col-span-6 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">Add / Update</button>
-    </form>
-
-    <!-- Status -->
-    <div id="status-message" class="text-center font-semibold mb-4"></div>
-
-    <!-- Records Table -->
-    <div class="overflow-x-auto">
-      <table class="w-full border border-gray-200 rounded-lg">
-        <thead class="bg-green-100">
-          <tr>
-            <th class="p-3">Date</th>
-            <th class="p-3">Water</th>
-            <th class="p-3">Sleep</th>
-            <th class="p-3">Exercise</th>
-            <th class="p-3">Study</th>
-          </tr>
-        </thead>
-        <tbody id="records-table" class="divide-y divide-gray-200"></tbody>
-      </table>
+      <!-- Signup Form -->
+      <form id="signup-form" class="space-y-4 hidden">
+        <input type="text" id="signup-name" placeholder="Name" class="w-full p-2 border rounded" required />
+        <input type="email" id="signup-email" placeholder="Email" class="w-full p-2 border rounded" required />
+        <input type="password" id="signup-password" placeholder="Password" class="w-full p-2 border rounded" required />
+        <button type="submit" class="w-full bg-green-500 text-white py-2 rounded-lg">Signup</button>
+      </form>
     </div>
   </div>
-</section>
 
-<script>
-const API_URL = "https://health-tracker-exp.onrender.com"; // your Render backend
-let currentUserId = null;
+  <!-- Dashboard Section -->
+  <div id="dashboard-section" class="hidden min-h-screen">
+    <nav class="bg-white shadow p-4 flex justify-between items-center">
+      <h2 class="text-xl font-bold">Welcome, <span id="user-name"></span></h2>
+      <button id="logout-btn" class="bg-red-500 text-white px-4 py-2 rounded-lg">Logout</button>
+    </nav>
 
-const registerSection = document.getElementById("register-section");
-const loginSection = document.getElementById("login-section");
-const dashboardSection = document.getElementById("dashboard-section");
-const statusMessage = document.getElementById("status-message");
-const recordsTable = document.getElementById("records-table");
+    <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <!-- Cards -->
+      <div class="bg-white p-6 rounded-2xl shadow text-center">
+        <h3 class="text-lg font-bold">Habits</h3>
+        <p id="habits-count" class="text-2xl font-bold text-blue-500">0</p>
+      </div>
 
-function showLogin() {
-  registerSection.classList.add("hidden");
-  loginSection.classList.remove("hidden");
-}
-function showDashboard() {
-  loginSection.classList.add("hidden");
-  registerSection.classList.add("hidden");
-  dashboardSection.classList.remove("hidden");
-  fetchRecords();
-}
+      <div class="bg-white p-6 rounded-2xl shadow text-center">
+        <h3 class="text-lg font-bold">Workout (min)</h3>
+        <p id="workout-minutes" class="text-2xl font-bold text-green-500">0</p>
+      </div>
 
-// ==== Register ====
-document.getElementById("register-form").addEventListener("submit", async e=>{
-  e.preventDefault();
-  const username = document.getElementById("reg-username").value;
-  const password = document.getElementById("reg-password").value;
+      <div class="bg-white p-6 rounded-2xl shadow text-center">
+        <h3 class="text-lg font-bold">Calories</h3>
+        <p id="calories-count" class="text-2xl font-bold text-orange-500">0</p>
+      </div>
 
-  const res = await fetch(`${API_URL}/register`, {
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({username,password})
-  });
-  const data = await res.json();
-  alert(data.message || data.error);
-});
+      <div class="bg-white p-6 rounded-2xl shadow text-center">
+        <h3 class="text-lg font-bold">Water (glasses)</h3>
+        <p id="hydration-count" class="text-2xl font-bold text-blue-700">0</p>
+      </div>
+    </div>
 
-// ==== Login ====
-document.getElementById("login-form").addEventListener("submit", async e=>{
-  e.preventDefault();
-  const username = document.getElementById("login-username").value;
-  const password = document.getElementById("login-password").value;
+    <!-- Chart -->
+    <div class="p-6">
+      <canvas id="progressChart" class="bg-white p-6 rounded-2xl shadow"></canvas>
+    </div>
+  </div>
 
-  const res = await fetch(`${API_URL}/login`, {
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({username,password})
-  });
-  const data = await res.json();
-  if(data.userId){
-    currentUserId = data.userId;
-    showDashboard();
-  } else alert(data.error);
-});
+  <script>
+    const API_BASE = "https://your-backend.onrender.com"; // 🔗 replace with your Render backend URL
 
-// ==== Add/Update Record ====
-document.getElementById("record-form").addEventListener("submit", async e=>{
-  e.preventDefault();
-  const record = {
-    userId: currentUserId,
-    date: document.getElementById("date").value,
-    water: parseInt(document.getElementById("water").value),
-    sleep: parseInt(document.getElementById("sleep").value),
-    exercise: parseInt(document.getElementById("exercise").value),
-    study: parseInt(document.getElementById("study").value)
-  };
-  await fetch(`${API_URL}/update`, {
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify(record)
-  });
-  fetchRecords();
-});
+    const authSection = document.getElementById("auth-section");
+    const dashboardSection = document.getElementById("dashboard-section");
+    const loginForm = document.getElementById("login-form");
+    const signupForm = document.getElementById("signup-form");
+    const loginTab = document.getElementById("login-tab");
+    const signupTab = document.getElementById("signup-tab");
+    const userNameEl = document.getElementById("user-name");
 
-// ==== Fetch Records & Show Dashboard ====
-async function fetchRecords(){
-  const res = await fetch(`${API_URL}/dashboard/${currentUserId}`);
-  const records = await res.json();
+    // Tabs toggle
+    loginTab.addEventListener("click", () => {
+      loginForm.classList.remove("hidden");
+      signupForm.classList.add("hidden");
+      loginTab.classList.add("bg-blue-500", "text-white");
+      signupTab.classList.remove("bg-blue-500", "text-white");
+      signupTab.classList.add("bg-gray-200");
+    });
 
-  recordsTable.innerHTML = "";
-  let latest = {water:0, sleep:0, exercise:0, study:0};
-  records.forEach(r=>{
-    const waterClass = r.water >= 8 ? "bg-green-100" : "bg-red-100";
-    const sleepClass = r.sleep >= 7 ? "bg-green-100" : "bg-red-100";
-    const exerciseClass = r.exercise >= 30 ? "bg-green-100" : "bg-red-100";
-    const studyClass = r.study >= 4 ? "bg-green-100" : "bg-red-100";
+    signupTab.addEventListener("click", () => {
+      signupForm.classList.remove("hidden");
+      loginForm.classList.add("hidden");
+      signupTab.classList.add("bg-blue-500", "text-white");
+      loginTab.classList.remove("bg-blue-500", "text-white");
+      loginTab.classList.add("bg-gray-200");
+    });
 
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <td class="p-3">${r.date}</td>
-      <td class="p-3 ${waterClass}">${r.water} ${r.water >= 8 ? "💧" : ""}</td>
-      <td class="p-3 ${sleepClass}">${r.sleep} ${r.sleep >= 7 ? "😴" : ""}</td>
-      <td class="p-3 ${exerciseClass}">${r.exercise} ${r.exercise >= 30 ? "🏋" : ""}</td>
-      <td class="p-3 ${studyClass}">${r.study} ${r.study >= 4 ? "📚" : ""}</td>
-    `;
-    recordsTable.appendChild(row);
-    if(!latest.date || r.date >= latest.date) latest = r;
-  });
+    // Signup
+    signupForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = document.getElementById("signup-name").value;
+      const email = document.getElementById("signup-email").value;
+      const password = document.getElementById("signup-password").value;
 
-  const messages = [];
-  if(latest.water>=8) messages.push("💧 Water goal met!");
-  if(latest.sleep>=7) messages.push("😴 Sleep goal met!");
-  if(latest.exercise>=30) messages.push("🏋 Exercise goal met!");
-  if(latest.study>=4) messages.push("📚 Study goal met!");
-  statusMessage.textContent = messages.length===4
-    ? "🎉 Great job! All goals met!"
-    : "Keep going! " + messages.join(" ");
-}
-</script>
+      const res = await fetch(`${API_BASE}/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert("Signup successful! Please login.");
+        loginTab.click();
+      } else {
+        alert(data.error || "Signup failed");
+      }
+    });
+
+    // Login
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("login-email").value;
+      const password = document.getElementById("login-password").value;
+
+      const res = await fetch(`${API_BASE}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("name", data.name);
+        showDashboard();
+      } else {
+        alert(data.error || "Login failed");
+      }
+    });
+
+    // Logout
+    document.getElementById("logout-btn").addEventListener("click", () => {
+      localStorage.removeItem("token");
+      localStorage.removeItem("name");
+      dashboardSection.classList.add("hidden");
+      authSection.classList.remove("hidden");
+    });
+
+    // Show dashboard
+    async function showDashboard() {
+      authSection.classList.add("hidden");
+      dashboardSection.classList.remove("hidden");
+      userNameEl.textContent = localStorage.getItem("name");
+
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE}/api/dashboard`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+
+      document.getElementById("habits-count").textContent = data.habits;
+      document.getElementById("workout-minutes").textContent = data.workouts;
+      document.getElementById("calories-count").textContent = data.calories;
+      document.getElementById("hydration-count").textContent = data.hydration;
+
+      // Chart.js
+      const ctx = document.getElementById("progressChart").getContext("2d");
+      new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: ["Habits", "Workout", "Calories", "Water"],
+          datasets: [{
+            label: "Today's Progress",
+            data: [data.habits, data.workouts, data.calories, data.hydration],
+            backgroundColor: ["#3b82f6", "#22c55e", "#f97316", "#1d4ed8"],
+          }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } } }
+      });
+    }
+
+    // Auto-login if token exists
+    if (localStorage.getItem("token")) showDashboard();
+  </script>
 </body>
 </html>
