@@ -7,9 +7,7 @@
 <style>
   html, body { height:100%; margin:0; padding:0; font-family:'Segoe UI', Arial, sans-serif; }
   body { background: linear-gradient(120deg, #a2d4f6 60%, #023e8a 100%); display:flex; justify-content:center; align-items:center; flex-direction:column; min-height:100vh; }
-  body::before, body::after {
-    content:""; position:absolute; border-radius:40% 60% 60% 40% / 60% 40% 60% 40%; opacity:0.33; z-index:0;
-  }
+  body::before, body::after { content:""; position:absolute; border-radius:40% 60% 60% 40% / 60% 40% 60% 40%; opacity:0.33; z-index:0; }
   body::before { top:-100px; left:-100px; width:350px; height:350px; background:#90e0ef; }
   body::after { right:-120px; bottom:-160px; width:400px; height:300px; background:#0077b6; }
 
@@ -21,18 +19,18 @@
   .dashboard.active { display:block; }
 
   h2 { margin:0 0 12px 0; font-size:2rem; font-weight:600; letter-spacing:1px; text-align:center; }
+  h3 { margin:0 0 8px 0; }
   label { display:block; text-align:left; margin:13px 0 3px 1px; font-size:1.04rem; }
   input { width:100%; padding:10px 12px; border-radius:7px; border:none; margin-bottom:7px; outline:none; }
   .signin-btn { width:100%; padding:11px 0; background:#023e8a; color:#fff; font-weight:bold; border-radius:7px; border:none; cursor:pointer; margin-bottom:18px; }
   .signin-btn:hover { background:#0077b6; }
   .toggle-link { text-align:center; margin-top:10px; cursor:pointer; color:#48cae4; display:block; }
-  
-  .dashboard h3 { color:#fff; margin-top:0; }
-  .section { margin-bottom:20px; background:rgba(0,0,0,0.2); padding:15px; border-radius:10px; }
-  .section ul { padding-left:15px; }
-  .section li { margin-bottom:5px; }
-  .section input { margin-bottom:5px; width:calc(100% - 10px); }
-  .section button { background:#0077b6; color:#fff; border:none; border-radius:5px; padding:5px 10px; cursor:pointer; }
+
+  .dashboard .section { margin-bottom:20px; background:rgba(0,0,0,0.2); padding:15px; border-radius:10px; }
+  .dashboard ul { padding-left:15px; list-style:none; }
+  .dashboard li { margin-bottom:5px; }
+  .dashboard input { margin-bottom:5px; width:calc(100% - 10px); }
+  .dashboard button { background:#0077b6; color:#fff; border:none; border-radius:5px; padding:5px 10px; cursor:pointer; }
 </style>
 </head>
 <body>
@@ -118,12 +116,13 @@
 const API_URL = "https://health-tracker-express.onrender.com";
 let user = JSON.parse(localStorage.getItem('user'));
 
+// Toggle login/signup
 function toggleForms() {
   document.getElementById('login-box').classList.toggle('active');
   document.getElementById('signup-box').classList.toggle('active');
 }
 
-// Show dashboard if user logged in
+// Show dashboard if logged in
 if(user){
   showDashboard();
 }else{
@@ -143,7 +142,7 @@ document.getElementById("loginForm").addEventListener("submit", async e=>{
     });
     const data = await res.json();
     if(data.success){
-      user = data.user || { id:data.userId, name:email };
+      user = { id: data.userId, name: email };
       localStorage.setItem('user', JSON.stringify(user));
       showDashboard();
     } else alert(data.message);
@@ -163,7 +162,7 @@ document.getElementById("signupForm").addEventListener("submit", async e=>{
       body:JSON.stringify({ username:email, password })
     });
     const data = await res.json();
-    if(data.success){ alert("Account created! Login now."); toggleForms(); }
+    if(data.success){ alert("✅ Account created! Login now."); toggleForms(); }
     else alert(data.message);
   } catch(err){ alert(err.message); }
 });
@@ -184,15 +183,21 @@ function logout(){
 
 // FETCH DATA
 async function fetchAndRender(endpoint,listId){
-  const res = await fetch(`${API_URL}/${endpoint}/${user.id}`);
-  const data = await res.json();
-  const ul = document.getElementById(listId);
-  ul.innerHTML = '';
-  data.forEach(item=>{
-    const li = document.createElement('li');
-    li.textContent = JSON.stringify(item);
-    ul.appendChild(li);
-  });
+  try{
+    const res = await fetch(`${API_URL}/${endpoint}/${user.id}`);
+    const data = await res.json();
+    const ul = document.getElementById(listId);
+    ul.innerHTML = '';
+    data.forEach(item=>{
+      const li = document.createElement('li');
+      if(endpoint==='habits') li.textContent = item.name + (item.completed ? " ✅" : " ❌");
+      else if(endpoint==='workouts') li.textContent = `${item.type} - ${item.duration} min`;
+      else if(endpoint==='meals') li.textContent = `${item.name} - ${item.calories} cal`;
+      else if(endpoint==='sleep') li.textContent = `${item.hours} hours on ${item.date}`;
+      else if(endpoint==='mood') li.textContent = `${item.mood} (${item.date})`;
+      ul.appendChild(li);
+    });
+  } catch(err){ console.error(err); }
 }
 
 async function fetchData(){
