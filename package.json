@@ -1,6 +1,7 @@
 {
   "name": "health_tracker_express",
   "version": "1.0.0",
+  "type": "module",
   "description": "",
   "main": "server.js",
   "scripts": {
@@ -21,4 +22,5 @@
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7"
   }
+  
 }
