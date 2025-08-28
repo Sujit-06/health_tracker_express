@@ -220,7 +220,7 @@
   </div>
 
   <script>
-    const API_URL = "https://health-tracker-express.onrender.com"; // ⚡ change if your Render URL differs
+    const API_URL = ""; // ⚡ empty string to call same domain
 
     function toggleForms() {
       document.getElementById("login-box").style.display =
@@ -246,7 +246,7 @@
         const data = await res.json();
         if (res.ok) {
           alert("✅ Login successful! Welcome " + data.user.name);
-          window.location.href = "/dashboard.html"; // change if needed
+          window.location.href = "/dashboard.html"; 
         } else {
           alert("❌ " + data.message);
         }
