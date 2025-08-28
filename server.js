@@ -1,86 +1,61 @@
 import express from "express";
 import cors from "cors";
+import bodyParser from "body-parser";
 import bcrypt from "bcrypt";
-import dbPromise, { initDB } from "./db.js";
+import db from "./db.js";   // ✅ Now this will work!
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 
 app.use(cors());
-app.use(express.json());
+app.use(bodyParser.json());
 
-// Initialize DB
-await initDB();
+// --- API Routes ---
 
-// ✅ Signup route
-app.post("/api/signup", async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
+// Signup
+app.post("/api/signup", (req, res) => {
+  const { email, password } = req.body;
 
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: "All fields are required" });
+  const hashedPassword = bcrypt.hashSync(password, 10);
+
+  const query = `INSERT INTO users (email, password) VALUES (?, ?)`;
+  db.run(query, [email, hashedPassword], function (err) {
+    if (err) {
+      console.error("❌ Signup error:", err.message);
+      return res.status(400).json({ message: "User already exists" });
     }
-
-    const db = await dbPromise;
-
-    // Check if email already exists
-    const existing = await db.get("SELECT * FROM users WHERE email = ?", [email]);
-    if (existing) {
-      return res.status(400).json({ message: "Email already exists" });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    await db.run("INSERT INTO users (name, email, password) VALUES (?, ?, ?)", [
-      name,
-      email,
-      hashedPassword
-    ]);
-
-    res.json({ message: "User registered successfully" });
-  } catch (err) {
-    console.error("Signup error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
+    res.json({ message: "✅ Signup successful", userId: this.lastID });
+  });
 });
 
-// ✅ Login route
-app.post("/api/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
+// Login
+app.post("/api/login", (req, res) => {
+  const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ message: "Email and password required" });
+  const query = `SELECT * FROM users WHERE email = ?`;
+  db.get(query, [email], (err, user) => {
+    if (err) {
+      console.error("❌ Login error:", err.message);
+      return res.status(500).json({ message: "Internal server error" });
     }
-
-    const db = await dbPromise;
-    const user = await db.get("SELECT * FROM users WHERE email = ?", [email]);
-
     if (!user) {
-      return res.status(400).json({ message: "Invalid email or password" });
+      return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid email or password" });
+    const valid = bcrypt.compareSync(password, user.password);
+    if (!valid) {
+      return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    res.json({
-      message: "Login successful",
-      user: { id: user.id, name: user.name, email: user.email }
-    });
-  } catch (err) {
-    console.error("Login error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
+    res.json({ message: "✅ Login successful", userId: user.id });
+  });
 });
 
-// ✅ Root route
+// Default
 app.get("/", (req, res) => {
-  res.send("✅ Health Tracker Backend is running!");
+  res.send("✅ Backend running");
 });
 
-// Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
