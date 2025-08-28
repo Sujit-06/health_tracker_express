@@ -1,187 +1,175 @@
-// server.js
-import express from 'express';
-import sqlite3 from 'sqlite3';
-import { open } from 'sqlite';
-import bodyParser from 'body-parser';
-import cors from 'cors';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import express from "express";
+import sqlite3 from "sqlite3";
+import cors from "cors";
+import bodyParser from "body-parser";
+import path from "path";
+import { fileURLToPath } from "url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
+// App setup
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Middleware
 app.use(cors());
 app.use(bodyParser.json());
 
-// Serve frontend
-app.use(express.static(path.join(__dirname, 'frontend')));
+// Path setup
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const dbPath = path.join(__dirname, "db.sqlite");
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
+// Connect to SQLite database
+const db = new sqlite3.Database(dbPath, (err) => {
+  if (err) console.error("DB Connection Error:", err.message);
+  else console.log("Connected to SQLite database");
 });
 
-// Open SQLite database
-const dbPromise = open({
-  filename: './health_tracker.db',
-  driver: sqlite3.Database
-});
-
-// Initialize tables
-(async () => {
-  const db = await dbPromise;
-
-  await db.exec(`
+// Create tables if not exist
+db.serialize(() => {
+  db.run(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE,
+      email TEXT UNIQUE,
       password TEXT
-    );
+    )
+  `);
 
+  db.run(`
     CREATE TABLE IF NOT EXISTS habits (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER,
-      name TEXT,
-      completed INTEGER DEFAULT 0
-    );
+      habit_name TEXT,
+      completed INTEGER DEFAULT 0,
+      FOREIGN KEY(user_id) REFERENCES users(id)
+    )
+  `);
 
+  db.run(`
     CREATE TABLE IF NOT EXISTS workouts (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER,
-      type TEXT,
-      duration INTEGER
-    );
+      workout_name TEXT,
+      duration INTEGER,
+      FOREIGN KEY(user_id) REFERENCES users(id)
+    )
+  `);
 
+  db.run(`
     CREATE TABLE IF NOT EXISTS meals (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER,
-      name TEXT,
-      calories INTEGER
-    );
+      meal_name TEXT,
+      calories INTEGER,
+      FOREIGN KEY(user_id) REFERENCES users(id)
+    )
+  `);
 
+  db.run(`
     CREATE TABLE IF NOT EXISTS sleep (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER,
-      hours REAL,
-      date TEXT
-    );
+      hours INTEGER,
+      date TEXT,
+      FOREIGN KEY(user_id) REFERENCES users(id)
+    )
+  `);
 
+  db.run(`
     CREATE TABLE IF NOT EXISTS mood (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER,
       mood TEXT,
-      date TEXT
-    );
+      date TEXT,
+      FOREIGN KEY(user_id) REFERENCES users(id)
+    )
   `);
-
-  console.log('Database initialized');
-})();
-
-// --- AUTH ROUTES ---
-app.post('/signup', async (req, res) => {
-  const { username, password } = req.body;
-  try {
-    const db = await dbPromise;
-    await db.run('INSERT INTO users (username, password) VALUES (?, ?)', [username, password]);
-    res.json({ success: true });
-  } catch (err) {
-    res.json({ success: false, message: 'Username already exists.' });
-  }
 });
 
-app.post('/login', async (req, res) => {
-  const { username, password } = req.body;
-  const db = await dbPromise;
-  const user = await db.get('SELECT * FROM users WHERE username = ? AND password = ?', [username, password]);
-  if (user) {
-    res.json({ success: true, userId: user.id, user: { id: user.id, name: username } });
-  } else {
-    res.json({ success: false, message: 'Invalid credentials.' });
-  }
+// -------------------- Routes --------------------
+
+// Signup
+app.post("/signup", (req, res) => {
+  const { username, email, password } = req.body;
+  if (!username || !email || !password) return res.status(400).json({ error: "Missing fields" });
+
+  const query = `INSERT INTO users (username, email, password) VALUES (?, ?, ?)`;
+  db.run(query, [username, email, password], function (err) {
+    if (err) return res.status(400).json({ error: err.message });
+    res.json({ message: "User created", userId: this.lastID });
+  });
 });
 
-// --- HABITS ROUTES ---
-app.get('/habits/:userId', async (req, res) => {
-  const db = await dbPromise;
-  const habits = await db.all('SELECT * FROM habits WHERE user_id = ?', [req.params.userId]);
-  res.json(habits);
+// Login
+app.post("/login", (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) return res.status(400).json({ error: "Missing fields" });
+
+  const query = `SELECT * FROM users WHERE email = ? AND password = ?`;
+  db.get(query, [email, password], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(401).json({ error: "Invalid credentials" });
+    res.json({ message: "Login successful", user: row });
+  });
 });
 
-app.post('/habits', async (req, res) => {
-  const { userId, name } = req.body;
-  const db = await dbPromise;
-  await db.run('INSERT INTO habits (user_id, name) VALUES (?, ?)', [userId, name]);
-  res.json({ success: true });
+// Get dashboard data
+app.get("/dashboard/:userId", (req, res) => {
+  const userId = req.params.userId;
+  if (!userId) return res.status(400).json({ error: "Missing userId" });
+
+  const data = {};
+
+  // Fetch habits
+  db.all(`SELECT * FROM habits WHERE user_id = ?`, [userId], (err, habits) => {
+    if (err) return res.status(500).json({ error: err.message });
+    data.habits = habits || [];
+
+    // Fetch workouts
+    db.all(`SELECT * FROM workouts WHERE user_id = ?`, [userId], (err, workouts) => {
+      if (err) return res.status(500).json({ error: err.message });
+      data.workouts = workouts || [];
+
+      // Fetch meals
+      db.all(`SELECT * FROM meals WHERE user_id = ?`, [userId], (err, meals) => {
+        if (err) return res.status(500).json({ error: err.message });
+        data.meals = meals || [];
+
+        // Fetch sleep
+        db.all(`SELECT * FROM sleep WHERE user_id = ?`, [userId], (err, sleep) => {
+          if (err) return res.status(500).json({ error: err.message });
+          data.sleep = sleep || [];
+
+          // Fetch mood
+          db.all(`SELECT * FROM mood WHERE user_id = ?`, [userId], (err, mood) => {
+            if (err) return res.status(500).json({ error: err.message });
+            data.mood = mood || [];
+            res.json(data);
+          });
+        });
+      });
+    });
+  });
 });
 
-app.post('/habits/complete', async (req, res) => {
-  const { habitId, completed } = req.body;
-  const db = await dbPromise;
-  await db.run('UPDATE habits SET completed = ? WHERE id = ?', [completed ? 1 : 0, habitId]);
-  res.json({ success: true });
+// Add habit
+app.post("/habit", (req, res) => {
+  const { userId, habitName } = req.body;
+  if (!userId || !habitName) return res.status(400).json({ error: "Missing fields" });
+  db.run(`INSERT INTO habits (user_id, habit_name) VALUES (?, ?)`, [userId, habitName], function(err){
+    if(err) return res.status(500).json({ error: err.message });
+    res.json({ message: "Habit added", id: this.lastID });
+  });
 });
 
-// --- WORKOUTS ROUTES ---
-app.get('/workouts/:userId', async (req, res) => {
-  const db = await dbPromise;
-  const workouts = await db.all('SELECT * FROM workouts WHERE user_id = ?', [req.params.userId]);
-  res.json(workouts);
+// Mark habit completed
+app.put("/habit/:id/complete", (req, res) => {
+  const habitId = req.params.id;
+  db.run(`UPDATE habits SET completed = 1 WHERE id = ?`, [habitId], function(err){
+    if(err) return res.status(500).json({ error: err.message });
+    res.json({ message: "Habit marked completed" });
+  });
 });
 
-app.post('/workouts', async (req, res) => {
-  const { userId, type, duration } = req.body;
-  const db = await dbPromise;
-  await db.run('INSERT INTO workouts (user_id, type, duration) VALUES (?, ?, ?)', [userId, type, duration]);
-  res.json({ success: true });
-});
-
-// --- MEALS ROUTES ---
-app.get('/meals/:userId', async (req, res) => {
-  const db = await dbPromise;
-  const meals = await db.all('SELECT * FROM meals WHERE user_id = ?', [req.params.userId]);
-  res.json(meals);
-});
-
-app.post('/meals', async (req, res) => {
-  const { userId, name, calories } = req.body;
-  const db = await dbPromise;
-  await db.run('INSERT INTO meals (user_id, name, calories) VALUES (?, ?, ?)', [userId, name, calories]);
-  res.json({ success: true });
-});
-
-// --- SLEEP ROUTES ---
-app.get('/sleep/:userId', async (req, res) => {
-  const db = await dbPromise;
-  const sleepData = await db.all('SELECT * FROM sleep WHERE user_id = ?', [req.params.userId]);
-  res.json(sleepData);
-});
-
-app.post('/sleep', async (req, res) => {
-  const { userId, hours, date } = req.body;
-  const db = await dbPromise;
-  await db.run('INSERT INTO sleep (user_id, hours, date) VALUES (?, ?, ?)', [userId, hours, date]);
-  res.json({ success: true });
-});
-
-// --- MOOD ROUTES ---
-app.get('/mood/:userId', async (req, res) => {
-  const db = await dbPromise;
-  const moodData = await db.all('SELECT * FROM mood WHERE user_id = ?', [req.params.userId]);
-  res.json(moodData);
-});
-
-app.post('/mood', async (req, res) => {
-  const { userId, mood, date } = req.body;
-  const db = await dbPromise;
-  await db.run('INSERT INTO mood (user_id, mood, date) VALUES (?, ?, ?)', [userId, mood, date]);
-  res.json({ success: true });
-});
-
-// Catch-all to serve index.html (if you add more frontend pages)
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
-});
-
+// -------------------- Start Server --------------------
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

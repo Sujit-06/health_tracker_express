@@ -1,249 +1,116 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Health Tracker — All-in-One</title>
-<style>
-  html, body { height:100%; margin:0; padding:0; font-family:'Segoe UI', Arial, sans-serif; }
-  body { background: linear-gradient(120deg, #a2d4f6 60%, #023e8a 100%); display:flex; justify-content:center; align-items:center; flex-direction:column; min-height:100vh; position:relative; overflow:hidden; }
-  body::before, body::after {
-    content:""; position:absolute; border-radius:40% 60% 60% 40% / 60% 40% 60% 40%; opacity:0.33; z-index:0;
-  }
-  body::before { top:-100px; left:-100px; width:350px; height:350px; background:#90e0ef; }
-  body::after { right:-120px; bottom:-160px; width:400px; height:300px; background:#0077b6; }
-
-  .container { position:relative; z-index:1; width:100%; max-width:600px; margin:auto; color:#fff; }
-
-  .login-form, .dashboard { background: rgba(255,255,255,0.14); box-shadow:0 8px 32px rgba(31,38,135,0.18); border-radius:22px; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); padding:34px 32px; display:none; }
-
-  .login-form.active { display:block; }
-  .dashboard.active { display:block; }
-
-  h2 { margin:0 0 12px 0; font-size:2rem; font-weight:600; letter-spacing:1px; text-align:center; }
-  label { display:block; text-align:left; margin:13px 0 3px 1px; font-size:1.04rem; }
-  input { width:100%; padding:10px 12px; border-radius:7px; border:none; margin-bottom:7px; outline:none; }
-  .signin-btn { width:100%; padding:11px 0; background:#023e8a; color:#fff; font-weight:bold; border-radius:7px; border:none; cursor:pointer; margin-bottom:18px; }
-  .signin-btn:hover { background:#0077b6; }
-  .toggle-link { text-align:center; margin-top:10px; cursor:pointer; color:#48cae4; display:block; }
-
-  .dashboard h3 { color:#fff; margin-top:0; }
-  .section { margin-bottom:20px; background:rgba(0,0,0,0.2); padding:15px; border-radius:10px; }
-  .section ul { padding-left:15px; }
-  .section li { margin-bottom:5px; }
-  .section input { margin-bottom:5px; width:calc(100% - 10px); }
-  .section button { background:#0077b6; color:#fff; border:none; border-radius:5px; padding:5px 10px; cursor:pointer; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Health Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-<div class="container">
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
 
-  <!-- LOGIN FORM -->
-  <div class="login-form" id="login-box">
-    <h2>Login</h2>
-    <form id="loginForm">
-      <label>Email</label>
-      <input type="email" id="email" placeholder="username@gmail.com" required>
-      <label>Password</label>
-      <input type="password" id="password" placeholder="Password" required>
-      <button type="submit" class="signin-btn">Sign In</button>
-    </form>
-    <span class="toggle-link" onclick="toggleForms()">Don't have an account? Register</span>
+  <div id="app" class="w-full max-w-md p-6 bg-white rounded-lg shadow-md">
+
+    <!-- Login/Signup -->
+    <div id="auth-section">
+      <h2 id="auth-title" class="text-2xl font-bold mb-4">Login</h2>
+
+      <form id="auth-form" class="space-y-4">
+        <input type="text" id="username" placeholder="Username" class="w-full p-2 border rounded hidden" />
+        <input type="email" id="email" placeholder="Email" class="w-full p-2 border rounded" required />
+        <input type="password" id="password" placeholder="Password" class="w-full p-2 border rounded" required />
+        <button type="submit" class="w-full bg-blue-500 text-white p-2 rounded">Submit</button>
+      </form>
+
+      <p class="mt-4 text-center">
+        <span id="toggle-auth" class="text-blue-500 cursor-pointer">Switch to Signup</span>
+      </p>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard-section" class="hidden">
+      <h2 class="text-2xl font-bold mb-4">Dashboard</h2>
+      <div id="dashboard-data" class="space-y-2"></div>
+      <button id="logout-btn" class="mt-4 bg-red-500 text-white p-2 rounded w-full">Logout</button>
+    </div>
+
   </div>
-
-  <!-- SIGNUP FORM -->
-  <div class="login-form" id="signup-box">
-    <h2>Register</h2>
-    <form id="signupForm">
-      <label>Full Name</label>
-      <input type="text" id="name" placeholder="John Doe" required>
-      <label>Email</label>
-      <input type="email" id="signup-email" placeholder="username@gmail.com" required>
-      <label>Password</label>
-      <input type="password" id="signup-password" placeholder="Password" required>
-      <button type="submit" class="signin-btn">Create Account</button>
-    </form>
-    <span class="toggle-link" onclick="toggleForms()">Already have an account? Login</span>
-  </div>
-
-  <!-- DASHBOARD -->
-  <div class="dashboard" id="dashboard">
-    <h2>Welcome, <span id="user-name"></span></h2>
-
-    <div class="section">
-      <h3>Habits</h3>
-      <ul id="habits-list"></ul>
-      <input type="text" id="new-habit" placeholder="New habit">
-      <button onclick="addHabit()">Add Habit</button>
-    </div>
-
-    <div class="section">
-      <h3>Workouts</h3>
-      <ul id="workouts-list"></ul>
-      <input type="text" id="workout-type" placeholder="Workout type">
-      <input type="number" id="workout-duration" placeholder="Duration (min)">
-      <button onclick="addWorkout()">Add Workout</button>
-    </div>
-
-    <div class="section">
-      <h3>Meals</h3>
-      <ul id="meals-list"></ul>
-      <input type="text" id="meal-name" placeholder="Meal name">
-      <input type="number" id="meal-calories" placeholder="Calories">
-      <button onclick="addMeal()">Add Meal</button>
-    </div>
-
-    <div class="section">
-      <h3>Sleep</h3>
-      <ul id="sleep-list"></ul>
-      <input type="number" id="sleep-hours" placeholder="Hours">
-      <input type="date" id="sleep-date">
-      <button onclick="addSleep()">Add Sleep</button>
-    </div>
-
-    <div class="section">
-      <h3>Mood</h3>
-      <ul id="mood-list"></ul>
-      <input type="text" id="mood-text" placeholder="Mood">
-      <input type="date" id="mood-date">
-      <button onclick="addMood()">Add Mood</button>
-    </div>
-
-    <button onclick="logout()" style="background:red;margin-top:10px;">Logout</button>
-  </div>
-
-</div>
 
 <script>
-let user = JSON.parse(localStorage.getItem('user'));
+let isLogin = true;
+const authTitle = document.getElementById("auth-title");
+const toggleAuth = document.getElementById("toggle-auth");
+const usernameInput = document.getElementById("username");
+const authForm = document.getElementById("auth-form");
+const dashboardSection = document.getElementById("dashboard-section");
+const authSection = document.getElementById("auth-section");
+const dashboardData = document.getElementById("dashboard-data");
+let currentUserId = null;
 
-// Use relative paths because backend serves frontend
-const API = '';
+// Toggle Login/Signup
+toggleAuth.addEventListener("click", () => {
+  isLogin = !isLogin;
+  if (isLogin) {
+    authTitle.innerText = "Login";
+    usernameInput.style.display = "none";
+    toggleAuth.innerText = "Switch to Signup";
+  } else {
+    authTitle.innerText = "Signup";
+    usernameInput.style.display = "block";
+    toggleAuth.innerText = "Switch to Login";
+  }
+});
 
-function toggleForms() {
-  document.getElementById('login-box').classList.toggle('active');
-  document.getElementById('signup-box').classList.toggle('active');
-}
-
-// Show dashboard if user logged in
-if(user){
-  showDashboard();
-}else{
-  document.getElementById('login-box').classList.add('active');
-}
-
-// LOGIN
-document.getElementById("loginForm").addEventListener("submit", async e=>{
+// Form submit
+authForm.addEventListener("submit", async (e) => {
   e.preventDefault();
+  const username = usernameInput.value;
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
+
+  const endpoint = isLogin ? "/login" : "/signup";
+  const payload = isLogin ? { email, password } : { username, email, password };
+
   try {
-    const res = await fetch(`${API}/login`, {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body:JSON.stringify({ username:email, password })
+    const res = await fetch(`http://localhost:5000${endpoint}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
     });
     const data = await res.json();
-    if(data.success){
-      user = data.user || { id:data.userId, name:email };
-      localStorage.setItem('user', JSON.stringify(user));
+    if (res.ok) {
+      currentUserId = data.user?.id || data.userId;
       showDashboard();
-    } else alert(data.message);
-  } catch(err){ alert(err.message); }
+    } else {
+      alert(data.error || "Error occurred");
+    }
+  } catch (err) {
+    alert("Server error: " + err.message);
+  }
 });
 
-// SIGNUP
-document.getElementById("signupForm").addEventListener("submit", async e=>{
-  e.preventDefault();
-  const name = document.getElementById("name").value;
-  const email = document.getElementById("signup-email").value;
-  const password = document.getElementById("signup-password").value;
-  try {
-    const res = await fetch(`${API}/signup`, {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body:JSON.stringify({ username:email, password })
-    });
-    const data = await res.json();
-    if(data.success){ alert("Account created! Login now."); toggleForms(); }
-    else alert(data.message);
-  } catch(err){ alert(err.message); }
-});
+// Show dashboard
+async function showDashboard() {
+  authSection.style.display = "none";
+  dashboardSection.style.display = "block";
 
-function showDashboard(){
-  document.getElementById('login-box').style.display='none';
-  document.getElementById('signup-box').style.display='none';
-  const dash = document.getElementById('dashboard');
-  dash.classList.add('active');
-  document.getElementById('user-name').innerText = user.name || "User";
-  fetchData();
-}
-
-function logout(){
-  localStorage.removeItem('user');
-  location.reload();
-}
-
-// FETCH DATA
-async function fetchAndRender(endpoint,listId){
-  const res = await fetch(`${API}/${endpoint}/${user.id}`);
+  const res = await fetch(`http://localhost:5000/dashboard/${currentUserId}`);
   const data = await res.json();
-  const ul = document.getElementById(listId);
-  ul.innerHTML = '';
-  data.forEach(item=>{
-    const li = document.createElement('li');
-    li.textContent = JSON.stringify(item);
-    ul.appendChild(li);
-  });
+
+  dashboardData.innerHTML = `
+    <p>Habits Completed: ${data.habitsCompleted}</p>
+    <p>Workouts: ${data.workouts}</p>
+    <p>Meals Logged: ${data.mealsLogged}</p>
+    <p>Sleep Hours: ${data.sleepHours}</p>
+    <p>Mood: ${data.mood}</p>
+  `;
 }
 
-async function fetchData(){
-  fetchAndRender('habits','habits-list');
-  fetchAndRender('workouts','workouts-list');
-  fetchAndRender('meals','meals-list');
-  fetchAndRender('sleep','sleep-list');
-  fetchAndRender('mood','mood-list');
-}
-
-// ADD FUNCTIONS
-async function addHabit(){ 
-  const name=document.getElementById('new-habit').value;
-  if(!name) return;
-  await fetch(`${API}/habits`,{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({userId:user.id,name}) });
-  document.getElementById('new-habit').value=''; fetchAndRender('habits','habits-list');
-}
-
-async function addWorkout(){
-  const type=document.getElementById('workout-type').value;
-  const duration=document.getElementById('workout-duration').value;
-  if(!type||!duration) return;
-  await fetch(`${API}/workouts`,{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({userId:user.id,type,duration}) });
-  document.getElementById('workout-type').value=''; document.getElementById('workout-duration').value=''; fetchAndRender('workouts','workouts-list');
-}
-
-async function addMeal(){
-  const name=document.getElementById('meal-name').value;
-  const calories=document.getElementById('meal-calories').value;
-  if(!name||!calories) return;
-  await fetch(`${API}/meals`,{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({userId:user.id,name,calories}) });
-  document.getElementById('meal-name').value=''; document.getElementById('meal-calories').value=''; fetchAndRender('meals','meals-list');
-}
-
-async function addSleep(){
-  const hours=document.getElementById('sleep-hours').value;
-  const date=document.getElementById('sleep-date').value;
-  if(!hours||!date) return;
-  await fetch(`${API}/sleep`,{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({userId:user.id,hours,date}) });
-  document.getElementById('sleep-hours').value=''; document.getElementById('sleep-date').value=''; fetchAndRender('sleep','sleep-list');
-}
-
-async function addMood(){
-  const mood=document.getElementById('mood-text').value;
-  const date=document.getElementById('mood-date').value;
-  if(!mood||!date) return;
-  await fetch(`${API}/mood`,{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({userId:user.id,mood,date}) });
-  document.getElementById('mood-text').value=''; document.getElementById('mood-date').value=''; fetchAndRender('mood','mood-list');
-}
+// Logout
+document.getElementById("logout-btn").addEventListener("click", () => {
+  dashboardSection.style.display = "none";
+  authSection.style.display = "block";
+});
 </script>
+
 </body>
 </html>
