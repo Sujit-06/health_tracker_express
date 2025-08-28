@@ -1,68 +1,102 @@
-// server.js
 import express from "express";
-import cors from "cors";
+import sqlite3 from "sqlite3";
+import { open } from "sqlite";
 import bcrypt from "bcryptjs";
-import db from "./db.js"; // Import database
+import cors from "cors";
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 10000;
 
 app.use(cors());
 app.use(express.json());
 
-// ---------------- Routes ----------------
+// ===================
+// DATABASE CONNECTION
+// ===================
+let db;
+const initDb = async () => {
+  db = await open({
+    filename: "./database.sqlite",
+    driver: sqlite3.Database
+  });
 
-// Test route
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      email TEXT UNIQUE NOT NULL,
+      password TEXT NOT NULL
+    )
+  `);
+};
+initDb();
+
+// ===================
+// ROUTES
+// ===================
+
+// Root check
 app.get("/", (req, res) => {
-  res.send("✅ Health Tracker Backend is running on Render");
+  res.json({ message: "✅ Health Tracker API running!" });
 });
 
-// Register user
-app.post("/api/register", async (req, res) => {
-  const { email, password } = req.body;
-
+// Signup
+app.post("/api/signup", async (req, res) => {
   try {
-    if (!email || !password) {
-      return res.status(400).json({ success: false, error: "Email and password are required" });
+    const { name, email, password } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "All fields are required" });
     }
 
+    // Check if user exists
+    const existing = await db.get("SELECT * FROM users WHERE email = ?", [email]);
+    if (existing) {
+      return res.status(400).json({ message: "Email already registered" });
+    }
+
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    await db.run("INSERT INTO users (email, password) VALUES (?, ?)", [
+    await db.run("INSERT INTO users (name, email, password) VALUES (?, ?, ?)", [
+      name,
       email,
-      hashedPassword,
+      hashedPassword
     ]);
 
-    res.json({ success: true, message: "User registered successfully" });
+    res.json({ message: "User registered successfully" });
   } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 });
 
-// Login user
+// Login
 app.post("/api/login", async (req, res) => {
-  const { email, password } = req.body;
-
   try {
+    const { email, password } = req.body;
+
     const user = await db.get("SELECT * FROM users WHERE email = ?", [email]);
-
     if (!user) {
-      return res.status(401).json({ success: false, error: "Invalid credentials" });
+      return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return res.status(401).json({ success: false, error: "Invalid credentials" });
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    res.json({ success: true, message: "Login successful" });
+    res.json({
+      message: "Login successful",
+      user: { id: user.id, name: user.name, email: user.email }
+    });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 });
 
-// ---------------------------------------
-
+// ===================
+// START SERVER
+// ===================
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
