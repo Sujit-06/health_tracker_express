@@ -1,141 +1,86 @@
-const express = require("express");
-const sqlite3 = require("sqlite3").verbose();
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const cors = require("cors");
+import express from "express";
+import cors from "cors";
+import bcrypt from "bcrypt";
+import dbPromise, { initDB } from "./db.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const SECRET = "supersecretkey"; // use process.env.SECRET in production
 
 app.use(cors());
 app.use(express.json());
 
-// --- Database Setup ---
-const db = new sqlite3.Database("./health_tracker.db", (err) => {
-  if (err) console.error("DB Error:", err.message);
-  else console.log("Connected to SQLite DB");
-});
+// Initialize DB
+await initDB();
 
-// Create tables
-db.serialize(() => {
-  db.run(`CREATE TABLE IF NOT EXISTS users(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT,
-    email TEXT UNIQUE,
-    password TEXT
-  )`);
+// ✅ Signup route
+app.post("/api/signup", async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
 
-  db.run(`CREATE TABLE IF NOT EXISTS habits(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    date TEXT,
-    completed INTEGER
-  )`);
-
-  db.run(`CREATE TABLE IF NOT EXISTS workouts(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    date TEXT,
-    minutes INTEGER
-  )`);
-
-  db.run(`CREATE TABLE IF NOT EXISTS meals(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    date TEXT,
-    calories INTEGER
-  )`);
-
-  db.run(`CREATE TABLE IF NOT EXISTS hydration(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    date TEXT,
-    glasses INTEGER
-  )`);
-});
-
-// --- Middleware: Auth ---
-function authenticateToken(req, res, next) {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
-  if (!token) return res.sendStatus(401);
-
-  jwt.verify(token, SECRET, (err, user) => {
-    if (err) return res.sendStatus(403);
-    req.user = user;
-    next();
-  });
-}
-
-// --- Auth Routes ---
-app.post("/signup", async (req, res) => {
-  const { name, email, password } = req.body;
-  const hashed = await bcrypt.hash(password, 10);
-
-  db.run(
-    `INSERT INTO users(name,email,password) VALUES(?,?,?)`,
-    [name, email, hashed],
-    function (err) {
-      if (err) return res.status(400).json({ error: "Email already exists" });
-      res.json({ message: "User created" });
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "All fields are required" });
     }
-  );
+
+    const db = await dbPromise;
+
+    // Check if email already exists
+    const existing = await db.get("SELECT * FROM users WHERE email = ?", [email]);
+    if (existing) {
+      return res.status(400).json({ message: "Email already exists" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await db.run("INSERT INTO users (name, email, password) VALUES (?, ?, ?)", [
+      name,
+      email,
+      hashedPassword
+    ]);
+
+    res.json({ message: "User registered successfully" });
+  } catch (err) {
+    console.error("Signup error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
 });
 
-app.post("/login", (req, res) => {
-  const { email, password } = req.body;
-  db.get(`SELECT * FROM users WHERE email=?`, [email], async (err, user) => {
-    if (err || !user) return res.status(400).json({ error: "User not found" });
-    const valid = await bcrypt.compare(password, user.password);
-    if (!valid) return res.status(400).json({ error: "Invalid password" });
+// ✅ Login route
+app.post("/api/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
 
-    const token = jwt.sign({ id: user.id, email: user.email }, SECRET, {
-      expiresIn: "1h",
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password required" });
+    }
+
+    const db = await dbPromise;
+    const user = await db.get("SELECT * FROM users WHERE email = ?", [email]);
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid email or password" });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid email or password" });
+    }
+
+    res.json({
+      message: "Login successful",
+      user: { id: user.id, name: user.name, email: user.email }
     });
-    res.json({ token, name: user.name });
-  });
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
 });
 
-// --- Dashboard API ---
-app.get("/api/dashboard", authenticateToken, (req, res) => {
-  const userId = req.user.id;
-  const today = new Date().toISOString().split("T")[0];
-
-  db.serialize(() => {
-    db.get(
-      `SELECT COUNT(*) as completed FROM habits WHERE user_id=? AND date=? AND completed=1`,
-      [userId, today],
-      (err, habits) => {
-        db.get(
-          `SELECT SUM(minutes) as minutes FROM workouts WHERE user_id=? AND date=?`,
-          [userId, today],
-          (err, workouts) => {
-            db.get(
-              `SELECT SUM(calories) as calories FROM meals WHERE user_id=? AND date=?`,
-              [userId, today],
-              (err, meals) => {
-                db.get(
-                  `SELECT SUM(glasses) as glasses FROM hydration WHERE user_id=? AND date=?`,
-                  [userId, today],
-                  (err, hydration) => {
-                    res.json({
-                      habits: habits?.completed || 0,
-                      workouts: workouts?.minutes || 0,
-                      calories: meals?.calories || 0,
-                      hydration: hydration?.glasses || 0,
-                    });
-                  }
-                );
-              }
-            );
-          }
-        );
-      }
-    );
-  });
+// ✅ Root route
+app.get("/", (req, res) => {
+  res.send("✅ Health Tracker Backend is running!");
 });
 
-app.listen(PORT, () =>
-  console.log(`✅ Server running at http://localhost:${PORT}`)
-);
+// Start server
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
