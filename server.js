@@ -1,92 +1,181 @@
-import express from "express";
-import cors from "cors";
-import bcrypt from "bcrypt";
-import sqlite3 from "sqlite3";
-import { open } from "sqlite";
-import path from "path";
-import { fileURLToPath } from "url";
+import express from 'express';
+import sqlite3 from 'sqlite3';
+import { open } from 'sqlite';
+import bodyParser from 'body-parser';
+import cors from 'cors';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
 app.use(cors());
-app.use(express.json());
+app.use(bodyParser.json());
 
-// Path helpers for serving frontend
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Serve frontend
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
+// Open SQLite database
+const dbPromise = open({
+  filename: './health_tracker.db',
+  driver: sqlite3.Database
 });
 
-// Initialize SQLite DB
-let db;
-const initDB = async () => {
-  db = await open({
-    filename: "./database.sqlite",
-    driver: sqlite3.Database,
-  });
+// Initialize tables
+(async () => {
+  const db = await dbPromise;
 
-  // Create users table if it doesn't exist
   await db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT,
-      email TEXT UNIQUE,
+      username TEXT UNIQUE,
       password TEXT
-    )
+    );
+
+    CREATE TABLE IF NOT EXISTS habits (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER,
+      name TEXT,
+      completed INTEGER DEFAULT 0
+    );
+
+    CREATE TABLE IF NOT EXISTS workouts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER,
+      type TEXT,
+      duration INTEGER
+    );
+
+    CREATE TABLE IF NOT EXISTS meals (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER,
+      name TEXT,
+      calories INTEGER
+    );
+
+    CREATE TABLE IF NOT EXISTS sleep (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER,
+      hours REAL,
+      date TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS mood (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER,
+      mood TEXT,
+      date TEXT
+    );
   `);
-};
 
-// Signup route
-app.post("/api/signup", async (req, res) => {
+  console.log('Database initialized');
+})();
+
+// --- AUTH ROUTES ---
+
+// Signup
+app.post('/signup', async (req, res) => {
+  const { username, password } = req.body;
   try {
-    const { name, email, password } = req.body;
-
-    const existing = await db.get("SELECT * FROM users WHERE email = ?", [email]);
-    if (existing) return res.status(400).json({ message: "User already exists" });
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    await db.run("INSERT INTO users (name, email, password) VALUES (?, ?, ?)", [
-      name,
-      email,
-      hashedPassword,
-    ]);
-
-    res.json({ message: "User registered successfully" });
+    const db = await dbPromise;
+    await db.run('INSERT INTO users (username, password) VALUES (?, ?)', [username, password]);
+    res.json({ success: true });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Error signing up" });
+    res.json({ success: false, message: 'Username already exists.' });
   }
 });
 
-// Login route
-app.post("/api/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    const user = await db.get("SELECT * FROM users WHERE email = ?", [email]);
-    if (!user) return res.status(400).json({ message: "Invalid email or password" });
-
-    const valid = await bcrypt.compare(password, user.password);
-    if (!valid) return res.status(400).json({ message: "Invalid email or password" });
-
-    res.json({
-      message: "Login successful",
-      user: { id: user.id, name: user.name, email: user.email },
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Error logging in" });
+// Login
+app.post('/login', async (req, res) => {
+  const { username, password } = req.body;
+  const db = await dbPromise;
+  const user = await db.get('SELECT * FROM users WHERE username = ? AND password = ?', [username, password]);
+  if (user) {
+    res.json({ success: true, userId: user.id });
+  } else {
+    res.json({ success: false, message: 'Invalid credentials.' });
   }
 });
 
-// Start server after DB init
-initDB().then(() => {
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-  });
+// --- HABITS ROUTES ---
+
+// Get habits for a user
+app.get('/habits/:userId', async (req, res) => {
+  const db = await dbPromise;
+  const habits = await db.all('SELECT * FROM habits WHERE user_id = ?', [req.params.userId]);
+  res.json(habits);
 });
+
+// Add habit
+app.post('/habits', async (req, res) => {
+  const { userId, name } = req.body;
+  const db = await dbPromise;
+  await db.run('INSERT INTO habits (user_id, name) VALUES (?, ?)', [userId, name]);
+  res.json({ success: true });
+});
+
+// Mark habit as completed
+app.post('/habits/complete', async (req, res) => {
+  const { habitId, completed } = req.body;
+  const db = await dbPromise;
+  await db.run('UPDATE habits SET completed = ? WHERE id = ?', [completed ? 1 : 0, habitId]);
+  res.json({ success: true });
+});
+
+// --- WORKOUTS ROUTES ---
+
+app.get('/workouts/:userId', async (req, res) => {
+  const db = await dbPromise;
+  const workouts = await db.all('SELECT * FROM workouts WHERE user_id = ?', [req.params.userId]);
+  res.json(workouts);
+});
+
+app.post('/workouts', async (req, res) => {
+  const { userId, type, duration } = req.body;
+  const db = await dbPromise;
+  await db.run('INSERT INTO workouts (user_id, type, duration) VALUES (?, ?, ?)', [userId, type, duration]);
+  res.json({ success: true });
+});
+
+// --- SLEEP ROUTES ---
+
+app.get('/sleep/:userId', async (req, res) => {
+  const db = await dbPromise;
+  const sleepData = await db.all('SELECT * FROM sleep WHERE user_id = ?', [req.params.userId]);
+  res.json(sleepData);
+});
+
+app.post('/sleep', async (req, res) => {
+  const { userId, hours, date } = req.body;
+  const db = await dbPromise;
+  await db.run('INSERT INTO sleep (user_id, hours, date) VALUES (?, ?, ?)', [userId, hours, date]);
+  res.json({ success: true });
+});
+
+// --- MOOD ROUTES ---
+
+app.get('/mood/:userId', async (req, res) => {
+  const db = await dbPromise;
+  const moodData = await db.all('SELECT * FROM mood WHERE user_id = ?', [req.params.userId]);
+  res.json(moodData);
+});
+
+app.post('/mood', async (req, res) => {
+  const { userId, mood, date } = req.body;
+  const db = await dbPromise;
+  await db.run('INSERT INTO mood (user_id, mood, date) VALUES (?, ?, ?)', [userId, mood, date]);
+  res.json({ success: true });
+});
+
+// --- MEALS ROUTES ---
+
+app.get('/meals/:userId', async (req, res) => {
+  const db = await dbPromise;
+  const meals = await db.all('SELECT * FROM meals WHERE user_id = ?', [req.params.userId]);
+  res.json(meals);
+});
+
+app.post('/meals', async (req, res) => {
+  const { userId, name, calories } = req.body;
+  const db = await dbPromise;
+  await db.run('INSERT INTO meals (user_id, name, calories) VALUES (?, ?, ?)', [userId, name, calories]);
+  res.json({ success: true });
+});
+
+// Start server
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
