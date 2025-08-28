@@ -6,9 +6,7 @@ const app = express();
 const PORT = process.env.PORT || 10000;
 
 // Middleware
-app.use(cors({
-  origin: "*" // you can replace "*" with your frontend URL
-}));
+app.use(cors({ origin: "*" })); // Replace "*" with your frontend URL if needed
 app.use(express.json());
 
 // ==== SQLite DB ====
