@@ -23,7 +23,8 @@ const dbPromise = open({
   await db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT UNIQUE,
+      name TEXT,
+      email TEXT UNIQUE,
       password TEXT
     );
 
@@ -69,39 +70,36 @@ const dbPromise = open({
 // --- AUTH ROUTES ---
 
 // Signup
-app.post('/signup', async (req, res) => {
-  const { username, password } = req.body;
+app.post('/api/signup', async (req, res) => {
+  const { name, email, password } = req.body;
   try {
     const db = await dbPromise;
-    await db.run('INSERT INTO users (username, password) VALUES (?, ?)', [username, password]);
+    await db.run('INSERT INTO users (name, email, password) VALUES (?, ?, ?)', [name, email, password]);
     res.json({ success: true });
   } catch (err) {
-    res.json({ success: false, message: 'Username already exists.' });
+    res.status(400).json({ success: false, message: 'Email already exists.' });
   }
 });
 
 // Login
-app.post('/login', async (req, res) => {
-  const { username, password } = req.body;
+app.post('/api/login', async (req, res) => {
+  const { email, password } = req.body;
   const db = await dbPromise;
-  const user = await db.get('SELECT * FROM users WHERE username = ? AND password = ?', [username, password]);
+  const user = await db.get('SELECT * FROM users WHERE email = ? AND password = ?', [email, password]);
   if (user) {
-    res.json({ success: true, userId: user.id });
+    res.json({ success: true, user });
   } else {
-    res.json({ success: false, message: 'Invalid credentials.' });
+    res.status(401).json({ success: false, message: 'Invalid credentials.' });
   }
 });
 
 // --- HABITS ROUTES ---
-
-// Get habits for a user
 app.get('/habits/:userId', async (req, res) => {
   const db = await dbPromise;
   const habits = await db.all('SELECT * FROM habits WHERE user_id = ?', [req.params.userId]);
   res.json(habits);
 });
 
-// Add habit
 app.post('/habits', async (req, res) => {
   const { userId, name } = req.body;
   const db = await dbPromise;
@@ -109,7 +107,6 @@ app.post('/habits', async (req, res) => {
   res.json({ success: true });
 });
 
-// Mark habit as completed
 app.post('/habits/complete', async (req, res) => {
   const { habitId, completed } = req.body;
   const db = await dbPromise;
@@ -118,7 +115,6 @@ app.post('/habits/complete', async (req, res) => {
 });
 
 // --- WORKOUTS ROUTES ---
-
 app.get('/workouts/:userId', async (req, res) => {
   const db = await dbPromise;
   const workouts = await db.all('SELECT * FROM workouts WHERE user_id = ?', [req.params.userId]);
@@ -133,7 +129,6 @@ app.post('/workouts', async (req, res) => {
 });
 
 // --- SLEEP ROUTES ---
-
 app.get('/sleep/:userId', async (req, res) => {
   const db = await dbPromise;
   const sleepData = await db.all('SELECT * FROM sleep WHERE user_id = ?', [req.params.userId]);
@@ -148,7 +143,6 @@ app.post('/sleep', async (req, res) => {
 });
 
 // --- MOOD ROUTES ---
-
 app.get('/mood/:userId', async (req, res) => {
   const db = await dbPromise;
   const moodData = await db.all('SELECT * FROM mood WHERE user_id = ?', [req.params.userId]);
@@ -163,7 +157,6 @@ app.post('/mood', async (req, res) => {
 });
 
 // --- MEALS ROUTES ---
-
 app.get('/meals/:userId', async (req, res) => {
   const db = await dbPromise;
   const meals = await db.all('SELECT * FROM meals WHERE user_id = ?', [req.params.userId]);
