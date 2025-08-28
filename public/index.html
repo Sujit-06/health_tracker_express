@@ -10,7 +10,7 @@
 
   <div id="app" class="w-full max-w-md p-6 bg-white rounded-lg shadow-md">
 
-    <!-- Login/Signup -->
+    <!-- Login/Signup Section -->
     <div id="auth-section">
       <h2 id="auth-title" class="text-2xl font-bold mb-4">Login</h2>
 
@@ -26,7 +26,7 @@
       </p>
     </div>
 
-    <!-- Dashboard -->
+    <!-- Dashboard Section -->
     <div id="dashboard-section" class="hidden">
       <h2 class="text-2xl font-bold mb-4">Dashboard</h2>
       <div id="dashboard-data" class="space-y-2"></div>
@@ -36,6 +36,8 @@
   </div>
 
 <script>
+const BACKEND_URL = "https://health-tracker-exp.onrender.com";
+
 let isLogin = true;
 const authTitle = document.getElementById("auth-title");
 const toggleAuth = document.getElementById("toggle-auth");
@@ -46,7 +48,7 @@ const authSection = document.getElementById("auth-section");
 const dashboardData = document.getElementById("dashboard-data");
 let currentUserId = null;
 
-// Toggle Login/Signup
+// Toggle between Login / Signup
 toggleAuth.addEventListener("click", () => {
   isLogin = !isLogin;
   if (isLogin) {
@@ -71,7 +73,7 @@ authForm.addEventListener("submit", async (e) => {
   const payload = isLogin ? { email, password } : { username, email, password };
 
   try {
-    const res = await fetch(`http://localhost:5000${endpoint}`, {
+    const res = await fetch(`${BACKEND_URL}${endpoint}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
@@ -88,27 +90,33 @@ authForm.addEventListener("submit", async (e) => {
   }
 });
 
-// Show dashboard
+// Show Dashboard
 async function showDashboard() {
   authSection.style.display = "none";
   dashboardSection.style.display = "block";
 
-  const res = await fetch(`http://localhost:5000/dashboard/${currentUserId}`);
-  const data = await res.json();
+  try {
+    const res = await fetch(`${BACKEND_URL}/dashboard/${currentUserId}`);
+    const data = await res.json();
 
-  dashboardData.innerHTML = `
-    <p>Habits Completed: ${data.habitsCompleted}</p>
-    <p>Workouts: ${data.workouts}</p>
-    <p>Meals Logged: ${data.mealsLogged}</p>
-    <p>Sleep Hours: ${data.sleepHours}</p>
-    <p>Mood: ${data.mood}</p>
-  `;
+    // Render dashboard data
+    dashboardData.innerHTML = `
+      <p>Habits Completed: ${data.habits?.length || 0}</p>
+      <p>Workouts: ${data.workouts?.length || 0}</p>
+      <p>Meals Logged: ${data.meals?.length || 0}</p>
+      <p>Sleep Records: ${data.sleep?.length || 0}</p>
+      <p>Mood Records: ${data.mood?.length || 0}</p>
+    `;
+  } catch (err) {
+    alert("Failed to fetch dashboard: " + err.message);
+  }
 }
 
 // Logout
 document.getElementById("logout-btn").addEventListener("click", () => {
   dashboardSection.style.display = "none";
   authSection.style.display = "block";
+  currentUserId = null;
 });
 </script>
 
