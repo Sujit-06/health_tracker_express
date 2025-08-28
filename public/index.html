@@ -2,244 +2,185 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Health Tracker — All-in-One</title>
-
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f9fafb;
-      margin: 0;
-      padding: 0;
-    }
-    .card {
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-      margin: 20px auto;
-      max-width: 600px;
-    }
-    h2 {
-      margin-top: 0;
-    }
-    input, select, button {
-      display: block;
-      width: 100%;
-      margin: 10px 0;
-      padding: 10px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-    }
-    button {
-      background: #2563eb;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #1d4ed8;
-    }
-    .hidden {
-      display: none;
-    }
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #2563eb;
-      color: white;
-      padding: 10px 15px;
-      border-radius: 8px 8px 0 0;
-    }
-    .nav span {
-      margin: 0 10px;
-      cursor: pointer;
-    }
-    .nav span.active {
-      font-weight: bold;
-      text-decoration: underline;
-    }
-    #overviewCards {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 15px;
-      margin-top: 15px;
-    }
-    #overviewCards div {
-      background: #f3f4f6;
-      padding: 15px;
-      border-radius: 8px;
-      text-align: center;
-    }
-    ul { list-style: none; padding: 0; }
-    li { margin: 8px 0; }
-    .completed { text-decoration: line-through; color: gray; }
-    .deleteBtn { background: red; color: white; border: none; border-radius: 5px; padding: 3px 6px; cursor: pointer; }
-  </style>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
 
-  <!-- ===== Login Page ===== -->
-  <div id="loginPage" class="card">
-    <h2>Login</h2>
-    <input type="text" id="loginUsername" placeholder="Username">
-    <input type="password" id="loginPassword" placeholder="Password">
-    <button id="loginBtn">Login</button>
-    <p>Don’t have an account? <a href="#" id="showSignup">Sign up here</a></p>
+  <!-- ========== LOGIN PAGE ========== -->
+  <div id="loginPage" class="w-full max-w-md bg-white shadow-lg rounded-lg p-6">
+    <h2 class="text-2xl font-bold text-center mb-4">Login</h2>
+    <input id="loginUsername" class="w-full p-2 border rounded mb-2" placeholder="Username">
+    <input id="loginPassword" type="password" class="w-full p-2 border rounded mb-2" placeholder="Password">
+    <button onclick="login()" class="w-full bg-blue-500 text-white py-2 rounded">Login</button>
+    <p class="text-sm text-center mt-2">Don't have an account? 
+      <span onclick="showSignup()" class="text-blue-600 cursor-pointer">Sign Up</span>
+    </p>
   </div>
 
-  <!-- ===== Signup Page ===== -->
-  <div id="signupPage" class="card hidden">
-    <h2>Sign Up</h2>
-    <input type="text" id="signupUsername" placeholder="Choose username">
-    <input type="password" id="signupPassword" placeholder="Choose password">
-    <button id="signupBtn">Sign Up</button>
-    <p>Already have an account? <a href="#" id="showLogin">Login here</a></p>
+  <!-- ========== SIGNUP PAGE ========== -->
+  <div id="signupPage" class="hidden w-full max-w-md bg-white shadow-lg rounded-lg p-6">
+    <h2 class="text-2xl font-bold text-center mb-4">Sign Up</h2>
+    <input id="signupUsername" class="w-full p-2 border rounded mb-2" placeholder="Username">
+    <input id="signupPassword" type="password" class="w-full p-2 border rounded mb-2" placeholder="Password">
+    <button onclick="signup()" class="w-full bg-green-500 text-white py-2 rounded">Sign Up</button>
+    <p class="text-sm text-center mt-2">Already have an account? 
+      <span onclick="showLogin()" class="text-blue-600 cursor-pointer">Login</span>
+    </p>
   </div>
 
-  <!-- ===== Dashboard ===== -->
-  <div id="dashboardPage" class="hidden">
-    <div id="dashboardCard" class="card">
-      <div class="topbar">
-        <div class="nav">
-          <span data-tab="overview" class="active">Dashboard</span>
-          <span data-tab="habits">Habits</span>
-          <span data-tab="workouts">Workouts</span>
-          <span data-tab="meals">Meals</span>
-          <span data-tab="sleep">Sleep</span>
-          <span data-tab="mood">Mood</span>
-          <span data-tab="friends">Friends</span>
-        </div>
-        <div>
-          <span id="userInfo">Hi User</span> | 
-          <button id="logoutBtn">Logout</button>
-        </div>
-      </div>
+  <!-- ========== DASHBOARD PAGE ========== -->
+  <div id="dashboardPage" class="hidden w-full max-w-4xl bg-white shadow-lg rounded-lg p-6">
+    <h2 class="text-2xl font-bold text-center mb-4">📊 Health Tracker Dashboard</h2>
 
-      <!-- Overview -->
-      <div id="section-overview" class="dash-section">
-        <h2>Today Overview</h2>
-        <div id="overviewCards">
-          <div><strong>Habit Streak</strong><br>🔥 5 days</div>
-          <div><strong>Workouts This Week</strong><br>3 sessions</div>
-          <div><strong>Calories Today</strong><br>1200 kcal / 2000</div>
-          <div><strong>Hydration</strong><br>6 glasses <button>Add</button></div>
-        </div>
-      </div>
+    <!-- Navigation Tabs -->
+    <div class="flex space-x-4 border-b mb-4">
+      <button class="tabBtn px-4 py-2" onclick="showTab('habitsTab')">Habits</button>
+      <button class="tabBtn px-4 py-2" onclick="showTab('workoutsTab')">Workouts</button>
+      <button class="tabBtn px-4 py-2" onclick="showTab('mealsTab')">Meals</button>
+      <button class="tabBtn px-4 py-2" onclick="showTab('moodTab')">Mood</button>
+      <button class="tabBtn px-4 py-2" onclick="showTab('friendsTab')">Friends</button>
+    </div>
 
-      <!-- Habits -->
-      <div id="section-habits" class="dash-section hidden">
-        <h2>Daily Habits</h2>
-        <div class="card">
-          <input type="text" id="habitInput" placeholder="Add new habit...">
-          <button id="addHabitBtn">Add Habit</button>
-          <ul id="habitList">
-            <li><input type="checkbox" checked> <span class="completed">Drink 8 glasses of water</span> <button class="deleteBtn">✖</button></li>
-            <li><input type="checkbox" checked> <span class="completed">Exercise for 30 minutes</span> <button class="deleteBtn">✖</button></li>
-          </ul>
-        </div>
-      </div>
+    <!-- Habits Tab -->
+    <div id="habitsTab" class="tabContent">
+      <textarea id="habitsInput" class="w-full p-2 border rounded mb-2" placeholder="Enter your habits..."></textarea>
+      <button onclick="saveHabits()" class="bg-blue-500 text-white px-4 py-2 rounded">Save Habits</button>
+    </div>
 
-      <!-- Workouts -->
-      <div id="section-workouts" class="dash-section hidden">
-        <h2>Workouts</h2>
-        <div class="card">
-          <h3>Log New Workout</h3>
-          <input type="text" placeholder="Workout type">
-          <input type="number" placeholder="Duration (minutes)">
-          <input type="number" placeholder="Calories burned">
-          <button>Save Workout</button>
-        </div>
-        <h3>Recent Workouts</h3>
-        <div class="card">Running · 30 min · 300 cal · 8/27/2025</div>
-        <div class="card">Gym Workout · 60 min · 450 cal · 8/27/2025</div>
-      </div>
+    <!-- Workouts Tab -->
+    <div id="workoutsTab" class="tabContent hidden">
+      <textarea id="workoutsInput" class="w-full p-2 border rounded mb-2" placeholder="Enter your workouts..."></textarea>
+      <button onclick="saveWorkouts()" class="bg-blue-500 text-white px-4 py-2 rounded">Save Workouts</button>
+    </div>
 
-      <!-- Meals -->
-      <div id="section-meals" class="dash-section hidden">
-        <h2>Meals & Nutrition</h2>
-        <div class="card">
-          <h3>Log Meal</h3>
-          <select>
-            <option>Select meal type</option>
-            <option>Breakfast</option>
-            <option>Lunch</option>
-            <option>Dinner</option>
-            <option>Snack</option>
-          </select>
-          <input type="text" placeholder="Meal name">
-          <input type="number" placeholder="Calories">
-          <button>Save Meal</button>
-        </div>
-        <h3>Today's Meals</h3>
-        <div class="card">Breakfast: Oatmeal with Berries · 350 cal</div>
-        <div class="card">Lunch: Grilled Chicken Salad · 450 cal</div>
-      </div>
+    <!-- Meals Tab -->
+    <div id="mealsTab" class="tabContent hidden">
+      <textarea id="mealsInput" class="w-full p-2 border rounded mb-2" placeholder="Enter your meals..."></textarea>
+      <button onclick="saveMeals()" class="bg-blue-500 text-white px-4 py-2 rounded">Save Meals</button>
+    </div>
 
-      <!-- Sleep -->
-      <div id="section-sleep" class="dash-section hidden">
-        <h2>Sleep Tracking</h2>
-        <div class="card">
-          <h3>Log Sleep</h3>
-          <label>Bedtime</label>
-          <input type="time">
-          <label>Wake time</label>
-          <input type="time">
-          <select>
-            <option>Sleep quality</option>
-            <option>Excellent</option>
-            <option>Good</option>
-            <option>Average</option>
-            <option>Poor</option>
-          </select>
-          <button>Save Sleep Data</button>
-        </div>
-        <h3>Sleep History</h3>
-        <div class="card">22:30 - 06:30 · Quality: Good · 8/27/2025</div>
-      </div>
+    <!-- Mood Tab -->
+    <div id="moodTab" class="tabContent hidden">
+      <textarea id="moodInput" class="w-full p-2 border rounded mb-2" placeholder="How are you feeling today?"></textarea>
+      <button onclick="saveMood()" class="bg-blue-500 text-white px-4 py-2 rounded">Save Mood</button>
+    </div>
+
+    <!-- Friends Tab -->
+    <div id="friendsTab" class="tabContent hidden">
+      <textarea id="friendsInput" class="w-full p-2 border rounded mb-2" placeholder="Track friends activities..."></textarea>
+      <button onclick="saveFriends()" class="bg-blue-500 text-white px-4 py-2 rounded">Save Friends</button>
     </div>
   </div>
 
+  <!-- ========== SCRIPT SECTION ========== -->
   <script>
-    // Switch pages
-    const loginPage = document.getElementById("loginPage");
-    const signupPage = document.getElementById("signupPage");
-    const dashboardPage = document.getElementById("dashboardPage");
+    const API = "https://your-backend.onrender.com"; // 🔗 change to your deployed backend
+    let userId = null;
+    const today = new Date().toISOString().split('T')[0];
 
-    document.getElementById("showSignup").onclick = () => {
-      loginPage.classList.add("hidden");
-      signupPage.classList.remove("hidden");
-    };
-    document.getElementById("showLogin").onclick = () => {
-      signupPage.classList.add("hidden");
-      loginPage.classList.remove("hidden");
-    };
+    // --- Navigation Tabs ---
+    function showTab(tabId) {
+      document.querySelectorAll('.tabContent').forEach(div => div.classList.add('hidden'));
+      document.getElementById(tabId).classList.remove('hidden');
+    }
 
-    document.getElementById("loginBtn").onclick = () => {
-      loginPage.classList.add("hidden");
-      dashboardPage.classList.remove("hidden");
-    };
-    document.getElementById("signupBtn").onclick = () => {
-      signupPage.classList.add("hidden");
-      dashboardPage.classList.remove("hidden");
-    };
-    document.getElementById("logoutBtn").onclick = () => {
-      dashboardPage.classList.add("hidden");
-      loginPage.classList.remove("hidden");
-    };
+    // --- Auth Functions ---
+    function showSignup() {
+      document.getElementById('loginPage').classList.add('hidden');
+      document.getElementById('signupPage').classList.remove('hidden');
+    }
+    function showLogin() {
+      document.getElementById('signupPage').classList.add('hidden');
+      document.getElementById('loginPage').classList.remove('hidden');
+    }
 
-    // Dashboard tab switching
-    const tabs = document.querySelectorAll(".nav span");
-    const sections = document.querySelectorAll(".dash-section");
-    tabs.forEach(tab => {
-      tab.onclick = () => {
-        tabs.forEach(t => t.classList.remove("active"));
-        tab.classList.add("active");
-        sections.forEach(sec => sec.classList.add("hidden"));
-        document.getElementById("section-" + tab.dataset.tab).classList.remove("hidden");
-      };
-    });
+    async function login() {
+      const username = document.getElementById("loginUsername").value;
+      const password = document.getElementById("loginPassword").value;
+      const res = await fetch(`${API}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      if (data.userId) {
+        userId = data.userId;
+        document.getElementById("loginPage").classList.add("hidden");
+        document.getElementById("dashboardPage").classList.remove("hidden");
+      } else {
+        alert(data.error);
+      }
+    }
+
+    async function signup() {
+      const username = document.getElementById("signupUsername").value;
+      const password = document.getElementById("signupPassword").value;
+      const res = await fetch(`${API}/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      if (data.userId) {
+        alert("Signup successful! Please login.");
+        showLogin();
+      } else {
+        alert(data.error);
+      }
+    }
+
+    // --- Dashboard Save Functions ---
+    async function saveHabits() {
+      const habits = document.getElementById("habitsInput").value;
+      await fetch(`${API}/update/habits`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, date: today, habits })
+      });
+      alert("✅ Habits Saved!");
+    }
+
+    async function saveWorkouts() {
+      const workouts = document.getElementById("workoutsInput").value;
+      await fetch(`${API}/update/workouts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, date: today, workouts })
+      });
+      alert("✅ Workouts Saved!");
+    }
+
+    async function saveMeals() {
+      const meals = document.getElementById("mealsInput").value;
+      await fetch(`${API}/update/meals`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, date: today, meals })
+      });
+      alert("✅ Meals Saved!");
+    }
+
+    async function saveMood() {
+      const mood = document.getElementById("moodInput").value;
+      await fetch(`${API}/update/mood`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, date: today, mood })
+      });
+      alert("✅ Mood Saved!");
+    }
+
+    async function saveFriends() {
+      const friends = document.getElementById("friendsInput").value;
+      await fetch(`${API}/update/friends`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, date: today, friends })
+      });
+      alert("✅ Friends Saved!");
+    }
   </script>
 </body>
 </html>
