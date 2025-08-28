@@ -15,7 +15,7 @@
   body::before, body::after {content:""; position:absolute; border-radius:40% 60% 60% 40% / 60% 40% 60% 40%; opacity:0.33; z-index:0;}
   body::before {top:-100px; left:-100px; width:350px; height:350px; background:#90e0ef;}
   body::after {right:-120px; bottom:-160px; width:400px; height:300px; background:#0077b6;}
-  .container {position:relative; z-index:1; width:100%; max-width:425px; margin:auto;}
+  .container {position:relative; z-index:1; width:100%; max-width:900px; margin:auto;}
   .card {background: rgba(255,255,255,0.14); box-shadow: 0 8px 32px 0 rgba(31,38,135,0.18); border-radius:22px; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); padding:34px 32px 25px 32px; color:#fff; text-align:center; display:none;}
   .card.active {display:block;}
   .logo {font-size:1.1rem; font-weight:600; margin-bottom:17px; color:#fff;}
@@ -26,8 +26,13 @@
   .signin-btn {width:100%; padding:11px 0; background:#023e8a; color:#fff; font-weight:bold; border-radius:7px; border:none; font-size:1.07rem; cursor:pointer; margin-bottom:18px; transition: background 0.18s;}
   .signin-btn:hover {background:#0077b6;}
   .link {color:#48cae4; text-decoration:none; cursor:pointer;}
-  #dashboardCards div {background: rgba(255,255,255,0.1); padding:10px; flex:1 1 45%; border-radius:7px; text-align:left;}
-  #dashboardCards {display:flex; flex-wrap:wrap; justify-content:space-between; gap:10px; margin-bottom:15px;}
+  .topbar {display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;}
+  .nav {display:flex; gap:15px;}
+  .nav span {cursor:pointer; padding:5px 10px; border-radius:6px; background:rgba(255,255,255,0.12);}
+  #overviewCards {display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px;}
+  #overviewCards div {background: rgba(255,255,255,0.15); padding:15px; border-radius:12px; text-align:left;}
+  #trends {display:grid; grid-template-columns:repeat(2,1fr); gap:15px; margin-bottom:20px;}
+  #trends canvas {background:rgba(255,255,255,0.1); border-radius:12px; padding:10px;}
 </style>
 </head>
 <body>
@@ -64,11 +69,38 @@
 
   <!-- ===== Dashboard Card ===== -->
   <div id="dashboardCard" class="card">
-    <div class="logo">Your logo</div>
-    <h2>Dashboard</h2>
-    <div id="dashboardCards">Loading records...</div>
-    <canvas id="statsChart" height="200"></canvas>
-    <button class="signin-btn" id="logoutBtn">Logout</button>
+    <div class="topbar">
+      <div class="nav">
+        <span>Dashboard</span>
+        <span>Habits</span>
+        <span>Workouts</span>
+        <span>Meals</span>
+        <span>Sleep</span>
+        <span>Mood</span>
+        <span>Friends</span>
+      </div>
+      <div>
+        <span id="userInfo">Hi User</span> | <button class="signin-btn" id="logoutBtn">Logout</button>
+      </div>
+    </div>
+
+    <h2>Today Overview</h2>
+    <div id="overviewCards">
+      <div><strong>Habit Streak</strong><br>🔥 5 days</div>
+      <div><strong>Workouts This Week</strong><br>3 sessions</div>
+      <div><strong>Calories Today</strong><br>1200 kcal / 2000</div>
+      <div><strong>Hydration</strong><br>6 glasses <button>Add</button></div>
+    </div>
+
+    <h2>Trends (Last 7 Days)</h2>
+    <div id="trends">
+      <canvas id="caloriesChart"></canvas>
+      <canvas id="workoutsChart"></canvas>
+      <canvas id="mealsChart"></canvas>
+      <canvas id="hydrationChart"></canvas>
+    </div>
+
+    <button class="signin-btn">Download Full Report</button>
   </div>
 
 </div>
@@ -87,8 +119,6 @@ const showLogin = document.getElementById("showLogin");
 const loginForm = document.getElementById("loginForm");
 const signupForm = document.getElementById("signupForm");
 
-const dashboardCards = document.getElementById("dashboardCards");
-const statsChart = document.getElementById("statsChart");
 const logoutBtn = document.getElementById("logoutBtn");
 
 // ===== View Switch =====
@@ -136,57 +166,30 @@ function showDashboard(){
   signupCard.classList.remove("active");
   dashboardCard.classList.add("active");
 
-  const userId = localStorage.getItem("userId");
-  if(!userId){ loginCard.classList.add("active"); dashboardCard.classList.remove("active"); return; }
+  document.getElementById("userInfo").innerText = "User #" + localStorage.getItem("userId");
 
-  fetch(`${API_URL}/dashboard/${userId}`)
-    .then(res=>res.json())
-    .then(data=>{
-      if(data.error){
-        dashboardCards.innerHTML = `<p>${data.error}</p>`;
-      } else if(data.length===0){
-        dashboardCards.innerHTML="<p>No records yet.</p>";
-      } else {
-        // ===== Cards =====
-        dashboardCards.innerHTML = data.map(r=>`
-          <div>
-            <strong>${r.date}</strong><br>
-            Water: ${r.water} cups<br>
-            Sleep: ${r.sleep} hrs<br>
-            Exercise: ${r.exercise} mins<br>
-            Study: ${r.study} hrs
-          </div>
-        `).join("");
-
-        // ===== Chart =====
-        const labels = data.map(r=>r.date).reverse();
-        const waterData = data.map(r=>r.water).reverse();
-        const sleepData = data.map(r=>r.sleep).reverse();
-        const exerciseData = data.map(r=>r.exercise).reverse();
-        const studyData = data.map(r=>r.study).reverse();
-
-        new Chart(statsChart, {
-          type: 'line',
-          data: {
-            labels,
-            datasets: [
-              { label: 'Water (cups)', data: waterData, borderColor:'#48cae4', fill:false, tension:0.2 },
-              { label: 'Sleep (hrs)', data: sleepData, borderColor:'#023e8a', fill:false, tension:0.2 },
-              { label: 'Exercise (mins)', data: exerciseData, borderColor:'#90e0ef', fill:false, tension:0.2 },
-              { label: 'Study (hrs)', data: studyData, borderColor:'#0077b6', fill:false, tension:0.2 }
-            ]
-          },
-          options: {
-            responsive:true,
-            plugins: { legend:{ labels:{ color:'#fff' } } },
-            scales:{
-              x:{ ticks:{ color:'#fff' }, grid:{ color:'rgba(255,255,255,0.1)' } },
-              y:{ ticks:{ color:'#fff' }, grid:{ color:'rgba(255,255,255,0.1)' } }
-            }
-          }
-        });
-      }
-    }).catch(err=>{ console.error(err); dashboardCards.innerHTML="<p>Error loading dashboard.</p>"; });
+  // Fake chart data (replace with API later)
+  const labels = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  new Chart(document.getElementById("caloriesChart"), {
+    type:"line",
+    data:{ labels, datasets:[{label:"Calories", data:[1800,2000,1500,2200,2100,1900,1700], borderColor:"#48cae4"}]},
+    options:{plugins:{legend:{labels:{color:"#fff"}}}, scales:{x:{ticks:{color:"#fff"}},y:{ticks:{color:"#fff"}}}}
+  });
+  new Chart(document.getElementById("workoutsChart"), {
+    type:"bar",
+    data:{ labels, datasets:[{label:"Workouts", data:[1,0,1,0,1,1,0], backgroundColor:"#0077b6"}]},
+    options:{plugins:{legend:{labels:{color:"#fff"}}}, scales:{x:{ticks:{color:"#fff"}},y:{ticks:{color:"#fff"}}}}
+  });
+  new Chart(document.getElementById("mealsChart"), {
+    type:"line",
+    data:{ labels, datasets:[{label:"Meals Logged", data:[3,2,3,2,3,4,2], borderColor:"#90e0ef"}]},
+    options:{plugins:{legend:{labels:{color:"#fff"}}}, scales:{x:{ticks:{color:"#fff"}},y:{ticks:{color:"#fff"}}}}
+  });
+  new Chart(document.getElementById("hydrationChart"), {
+    type:"bar",
+    data:{ labels, datasets:[{label:"Water (glasses)", data:[6,7,5,8,7,6,7], backgroundColor:"#023e8a"}]},
+    options:{plugins:{legend:{labels:{color:"#fff"}}}, scales:{x:{ticks:{color:"#fff"}},y:{ticks:{color:"#fff"}}}}
+  });
 }
 
 // ===== Logout =====
@@ -202,4 +205,3 @@ if(localStorage.getItem("userId")) showDashboard();
 
 </body>
 </html>
-<!-- Triggering deploy 2025-08-28 -->
