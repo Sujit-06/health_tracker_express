@@ -1,227 +1,206 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Health Tracker — All-in-One</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Health Tracker</title>
 
-  <!-- Tailwind for styling -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Chart.js for graphs -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <style>
-    body { background:#f1f5f9; font-family:sans-serif; }
-    .card { background:#fff; padding:20px; margin:10px; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
-    .hidden { display:none; }
-    .nav { display:flex; gap:12px; }
-    .nav span { cursor:pointer; padding:6px 12px; border-radius:8px; }
-    .nav span.active { background:#48cae4; color:#000; font-weight:bold; }
-    .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; }
-    #habitList { list-style:none; padding:0; }
-    #habitList li { display:flex; align-items:center; justify-content:space-between; padding:5px 0; }
-    #habitList li .completed { text-decoration:line-through; color:gray; }
-    .deleteBtn { background:none; border:none; color:red; cursor:pointer; font-size:16px; }
-  </style>
+<style>
+  /* ===== Common Styles ===== */
+  html, body { height:100%; margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Arial, sans-serif;}
+  body {min-height:100vh; width:100vw; background:linear-gradient(120deg,#a2d4f6 60%,#023e8a 100%); overflow:hidden; display:flex; align-items:center; justify-content:center; position:relative;}
+  body::before, body::after {content:""; position:absolute; border-radius:40% 60% 60% 40% / 60% 40% 60% 40%; opacity:0.33; z-index:0;}
+  body::before {top:-100px; left:-100px; width:350px; height:350px; background:#90e0ef;}
+  body::after {right:-120px; bottom:-160px; width:400px; height:300px; background:#0077b6;}
+  .container {position:relative; z-index:1; width:100%; max-width:900px; margin:auto;}
+  .card {background: rgba(255,255,255,0.14); box-shadow: 0 8px 32px 0 rgba(31,38,135,0.18); border-radius:22px; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); padding:34px 32px 25px 32px; color:#fff; text-align:center; display:none;}
+  .card.active {display:block;}
+  .logo {font-size:1.1rem; font-weight:600; margin-bottom:17px; color:#fff;}
+  h2 {margin:0 0 12px 0; letter-spacing:1px; font-size:2rem; font-weight:600;}
+  label {display:block; text-align:left; margin:13px 0 3px 1px; font-size:1.04rem; color:#e0e0e0;}
+  input[type="email"], input[type="password"] {width:100%; padding:10px 12px; border-radius:7px; border:none; margin-bottom:7px; background:rgba(255,255,255,0.27); color:#252525; font-size:1rem; outline:none;}
+  input::placeholder {color:#bdbdbd;}
+  .signin-btn {width:100%; padding:11px 0; background:#023e8a; color:#fff; font-weight:bold; border-radius:7px; border:none; font-size:1.07rem; cursor:pointer; margin-bottom:18px; transition: background 0.18s;}
+  .signin-btn:hover {background:#0077b6;}
+  .link {color:#48cae4; text-decoration:none; cursor:pointer;}
+  .topbar {display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;}
+  .nav {display:flex; gap:15px;}
+  .nav span {cursor:pointer; padding:5px 10px; border-radius:6px; background:rgba(255,255,255,0.12);}
+  #overviewCards {display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px;}
+  #overviewCards div {background: rgba(255,255,255,0.15); padding:15px; border-radius:12px; text-align:left;}
+  #trends {display:grid; grid-template-columns:repeat(2,1fr); gap:15px; margin-bottom:20px;}
+  #trends canvas {background:rgba(255,255,255,0.1); border-radius:12px; padding:10px;}
+</style>
 </head>
 <body>
 
-<!-- ================= LOGIN PAGE ================= -->
-<div id="loginPage" class="h-screen flex justify-center items-center">
-  <div class="card w-96">
-    <h2 class="text-xl font-bold mb-4">Login</h2>
-    <input type="text" id="loginEmail" placeholder="Email" class="w-full mb-3 p-2 border rounded">
-    <input type="password" id="loginPassword" placeholder="Password" class="w-full mb-3 p-2 border rounded">
-    <button id="loginBtn" class="w-full bg-blue-500 text-white py-2 rounded">Login</button>
-    <p class="mt-3 text-sm">Don’t have an account? 
-      <a href="#" id="toSignup" class="text-blue-600">Sign up</a>
-    </p>
-  </div>
-</div>
+<div class="container">
 
-<!-- ================= SIGNUP PAGE ================= -->
-<div id="signupPage" class="h-screen flex justify-center items-center hidden">
-  <div class="card w-96">
-    <h2 class="text-xl font-bold mb-4">Sign Up</h2>
-    <input type="text" id="signupName" placeholder="Name" class="w-full mb-3 p-2 border rounded">
-    <input type="text" id="signupEmail" placeholder="Email" class="w-full mb-3 p-2 border rounded">
-    <input type="password" id="signupPassword" placeholder="Password" class="w-full mb-3 p-2 border rounded">
-    <button id="signupBtn" class="w-full bg-green-500 text-white py-2 rounded">Sign Up</button>
-    <p class="mt-3 text-sm">Already have an account? 
-      <a href="#" id="toLogin" class="text-blue-600">Login</a>
-    </p>
+  <!-- ===== Login Card ===== -->
+  <div id="loginCard" class="card active">
+    <div class="logo">Your logo</div>
+    <h2>Login</h2>
+    <form id="loginForm">
+      <label for="loginEmail">Email</label>
+      <input type="email" id="loginEmail" placeholder="username@gmail.com" required>
+      <label for="loginPassword">Password</label>
+      <input type="password" id="loginPassword" placeholder="Password" required>
+      <button type="submit" class="signin-btn">Sign in</button>
+    </form>
+    <div class="register">Don't have an account? <span class="link" id="showSignup">Sign Up</span></div>
   </div>
-</div>
 
-<!-- ================= DASHBOARD ================= -->
-<div id="dashboardPage" class="hidden">
-  <div class="card max-w-5xl mx-auto mt-6">
+  <!-- ===== Signup Card ===== -->
+  <div id="signupCard" class="card">
+    <div class="logo">Your logo</div>
+    <h2>Sign Up</h2>
+    <form id="signupForm">
+      <label for="signupEmail">Email</label>
+      <input type="email" id="signupEmail" placeholder="username@gmail.com" required>
+      <label for="signupPassword">Password</label>
+      <input type="password" id="signupPassword" placeholder="Password" required>
+      <button type="submit" class="signin-btn">Sign Up</button>
+    </form>
+    <div class="register">Already have an account? <span class="link" id="showLogin">Login</span></div>
+  </div>
+
+  <!-- ===== Dashboard Card ===== -->
+  <div id="dashboardCard" class="card">
     <div class="topbar">
       <div class="nav">
-        <span data-tab="overview" class="active">Dashboard</span>
-        <span data-tab="habits">Habits</span>
-        <span data-tab="workouts">Workouts</span>
-        <span data-tab="meals">Meals</span>
-        <span data-tab="sleep">Sleep</span>
-        <span data-tab="mood">Mood</span>
-        <span data-tab="friends">Friends</span>
+        <span>Dashboard</span>
+        <span>Habits</span>
+        <span>Workouts</span>
+        <span>Meals</span>
+        <span>Sleep</span>
+        <span>Mood</span>
+        <span>Friends</span>
       </div>
       <div>
-        <span id="userInfo">Hi User</span> | 
-        <button class="bg-red-500 text-white px-3 py-1 rounded" id="logoutBtn">Logout</button>
+        <span id="userInfo">Hi User</span> | <button class="signin-btn" id="logoutBtn">Logout</button>
       </div>
     </div>
 
-    <!-- Sections -->
-    <div id="section-overview" class="dash-section">
-      <h2 class="text-lg font-bold mb-2">Today Overview</h2>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="card"><strong>Habit Streak</strong><br>🔥 5 days</div>
-        <div class="card"><strong>Workouts This Week</strong><br>3 sessions</div>
-        <div class="card"><strong>Calories Today</strong><br>1200 kcal / 2000</div>
-        <div class="card"><strong>Hydration</strong><br>6 glasses <button class="text-blue-600">+Add</button></div>
-      </div>
+    <h2>Today Overview</h2>
+    <div id="overviewCards">
+      <div><strong>Habit Streak</strong><br>🔥 5 days</div>
+      <div><strong>Workouts This Week</strong><br>3 sessions</div>
+      <div><strong>Calories Today</strong><br>1200 kcal / 2000</div>
+      <div><strong>Hydration</strong><br>6 glasses <button>Add</button></div>
     </div>
 
-    <div id="section-habits" class="dash-section hidden">
-      <h2 class="text-lg font-bold mb-2">Daily Habits</h2>
-      <div class="card">
-        <input type="text" id="habitInput" placeholder="Add new habit..." class="p-2 border rounded w-2/3">
-        <button id="addHabitBtn" class="bg-blue-500 text-white px-3 py-1 rounded">Add</button>
-        <ul id="habitList" class="mt-3"></ul>
-      </div>
+    <h2>Trends (Last 7 Days)</h2>
+    <div id="trends">
+      <canvas id="caloriesChart"></canvas>
+      <canvas id="workoutsChart"></canvas>
+      <canvas id="mealsChart"></canvas>
+      <canvas id="hydrationChart"></canvas>
     </div>
 
-    <div id="section-workouts" class="dash-section hidden">
-      <h2 class="text-lg font-bold mb-2">Workouts</h2>
-      <div class="card">
-        <h3 class="font-semibold">Log New Workout</h3>
-        <input type="text" placeholder="Workout type" class="w-full p-2 border rounded my-1">
-        <input type="number" placeholder="Duration (minutes)" class="w-full p-2 border rounded my-1">
-        <input type="number" placeholder="Calories burned" class="w-full p-2 border rounded my-1">
-        <button class="bg-green-500 text-white px-3 py-1 rounded">Save Workout</button>
-      </div>
-    </div>
-
-    <div id="section-meals" class="dash-section hidden">
-      <h2 class="text-lg font-bold mb-2">Meals & Nutrition</h2>
-      <div class="card">
-        <h3 class="font-semibold">Log Meal</h3>
-        <select class="w-full p-2 border rounded my-1">
-          <option>Select meal type</option>
-          <option>Breakfast</option>
-          <option>Lunch</option>
-          <option>Dinner</option>
-          <option>Snack</option>
-        </select>
-        <input type="text" placeholder="Meal name" class="w-full p-2 border rounded my-1">
-        <input type="number" placeholder="Calories" class="w-full p-2 border rounded my-1">
-        <button class="bg-green-500 text-white px-3 py-1 rounded">Save Meal</button>
-      </div>
-    </div>
-
-    <div id="section-sleep" class="dash-section hidden">
-      <h2 class="text-lg font-bold mb-2">Sleep Tracking</h2>
-      <div class="card">
-        <label>Bedtime</label>
-        <input type="time" class="w-full p-2 border rounded my-1">
-        <label>Wake time</label>
-        <input type="time" class="w-full p-2 border rounded my-1">
-        <button class="bg-green-500 text-white px-3 py-1 rounded">Save Sleep</button>
-      </div>
-    </div>
-
-    <div id="section-mood" class="dash-section hidden">
-      <h2 class="text-lg font-bold mb-2">Mood Tracking</h2>
-      <div class="card">🙂 Feeling Happy today</div>
-    </div>
-
-    <div id="section-friends" class="dash-section hidden">
-      <h2 class="text-lg font-bold mb-2">Friends</h2>
-      <div class="card">Invite & connect with friends</div>
-    </div>
+    <button class="signin-btn">Download Full Report</button>
   </div>
+
 </div>
 
 <script>
-const API_URL = "http://localhost:10000"; // Backend URL
+const API_URL = "https://health-tracker-exp.onrender.com";
 
-// Pages
-const loginPage = document.getElementById("loginPage");
-const signupPage = document.getElementById("signupPage");
-const dashboardPage = document.getElementById("dashboardPage");
+// Elements
+const loginCard = document.getElementById("loginCard");
+const signupCard = document.getElementById("signupCard");
+const dashboardCard = document.getElementById("dashboardCard");
 
-// Switch pages
-document.getElementById("toSignup").onclick = () => { loginPage.classList.add("hidden"); signupPage.classList.remove("hidden"); }
-document.getElementById("toLogin").onclick = () => { signupPage.classList.add("hidden"); loginPage.classList.remove("hidden"); }
+const showSignup = document.getElementById("showSignup");
+const showLogin = document.getElementById("showLogin");
 
-// Signup
-document.getElementById("signupBtn").onclick = async () => {
-  const name = document.getElementById("signupName").value;
-  const email = document.getElementById("signupEmail").value;
-  const pass = document.getElementById("signupPassword").value;
-  if(name && email && pass){
-    const res = await fetch(`${API_URL}/register`, {
-      method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ username: email, password: pass })
+const loginForm = document.getElementById("loginForm");
+const signupForm = document.getElementById("signupForm");
+
+const logoutBtn = document.getElementById("logoutBtn");
+
+// ===== View Switch =====
+showSignup.addEventListener("click", ()=>{ loginCard.classList.remove("active"); signupCard.classList.add("active"); });
+showLogin.addEventListener("click", ()=>{ signupCard.classList.remove("active"); loginCard.classList.add("active"); });
+
+// ===== Login =====
+loginForm.addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const username = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPassword").value.trim();
+  try{
+    const res = await fetch(`${API_URL}/login`, {
+      method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({username,password})
     });
     const data = await res.json();
-    if(data.error){ alert(data.error); }
-    else { alert("Signup successful! Please login."); signupPage.classList.add("hidden"); loginPage.classList.remove("hidden"); }
-  } else alert("Fill all fields");
-};
-
-// Login
-document.getElementById("loginBtn").onclick = async () => {
-  const email = document.getElementById("loginEmail").value;
-  const pass = document.getElementById("loginPassword").value;
-  const res = await fetch(`${API_URL}/login`, {
-    method:"POST", headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({ username: email, password: pass })
-  });
-  const data = await res.json();
-  if(data.error){ alert("Invalid credentials"); }
-  else {
-    localStorage.setItem("userId", data.userId);
-    document.getElementById("userInfo").innerText = "Hi " + email;
-    loginPage.classList.add("hidden");
-    dashboardPage.classList.remove("hidden");
-    loadDashboard();
-  }
-};
-
-// Logout
-document.getElementById("logoutBtn").onclick = () => {
-  localStorage.removeItem("userId");
-  dashboardPage.classList.add("hidden");
-  loginPage.classList.remove("hidden");
-};
-
-// Dashboard nav
-document.querySelectorAll(".nav span").forEach(tab => {
-  tab.addEventListener("click", () => {
-    document.querySelectorAll(".nav span").forEach(t => t.classList.remove("active"));
-    tab.classList.add("active");
-    document.querySelectorAll(".dash-section").forEach(sec => sec.classList.add("hidden"));
-    document.getElementById("section-" + tab.getAttribute("data-tab")).classList.remove("hidden");
-  });
+    if(data.userId){
+      localStorage.setItem("userId", data.userId);
+      showDashboard();
+    } else alert(data.error || "Login failed");
+  }catch(err){ console.error(err); alert("Error connecting to backend"); }
 });
 
-// Load dashboard data
-async function loadDashboard(){
-  const userId = localStorage.getItem("userId");
-  if(!userId) return;
-  const res = await fetch(`${API_URL}/dashboard/${userId}`);
-  const data = await res.json();
-  console.log("Dashboard Data:", data);
+// ===== Signup =====
+signupForm.addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const username = document.getElementById("signupEmail").value.trim();
+  const password = document.getElementById("signupPassword").value.trim();
+  try{
+    const res = await fetch(`${API_URL}/register`, {
+      method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({username,password})
+    });
+    const data = await res.json();
+    if(data.message){
+      alert("Signup successful!");
+      signupCard.classList.remove("active");
+      loginCard.classList.add("active");
+    } else alert(data.error || "Signup failed");
+  }catch(err){ console.error(err); alert("Error connecting to backend"); }
+});
+
+// ===== Dashboard =====
+function showDashboard(){
+  loginCard.classList.remove("active");
+  signupCard.classList.remove("active");
+  dashboardCard.classList.add("active");
+
+  document.getElementById("userInfo").innerText = "User #" + localStorage.getItem("userId");
+
+  // Fake chart data (replace with API later)
+  const labels = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  new Chart(document.getElementById("caloriesChart"), {
+    type:"line",
+    data:{ labels, datasets:[{label:"Calories", data:[1800,2000,1500,2200,2100,1900,1700], borderColor:"#48cae4"}]},
+    options:{plugins:{legend:{labels:{color:"#fff"}}}, scales:{x:{ticks:{color:"#fff"}},y:{ticks:{color:"#fff"}}}}
+  });
+  new Chart(document.getElementById("workoutsChart"), {
+    type:"bar",
+    data:{ labels, datasets:[{label:"Workouts", data:[1,0,1,0,1,1,0], backgroundColor:"#0077b6"}]},
+    options:{plugins:{legend:{labels:{color:"#fff"}}}, scales:{x:{ticks:{color:"#fff"}},y:{ticks:{color:"#fff"}}}}
+  });
+  new Chart(document.getElementById("mealsChart"), {
+    type:"line",
+    data:{ labels, datasets:[{label:"Meals Logged", data:[3,2,3,2,3,4,2], borderColor:"#90e0ef"}]},
+    options:{plugins:{legend:{labels:{color:"#fff"}}}, scales:{x:{ticks:{color:"#fff"}},y:{ticks:{color:"#fff"}}}}
+  });
+  new Chart(document.getElementById("hydrationChart"), {
+    type:"bar",
+    data:{ labels, datasets:[{label:"Water (glasses)", data:[6,7,5,8,7,6,7], backgroundColor:"#023e8a"}]},
+    options:{plugins:{legend:{labels:{color:"#fff"}}}, scales:{x:{ticks:{color:"#fff"}},y:{ticks:{color:"#fff"}}}}
+  });
 }
 
-// Auto-login
-if(localStorage.getItem("userId")){
-  loginPage.classList.add("hidden");
-  dashboardPage.classList.remove("hidden");
-  loadDashboard();
-}
+// ===== Logout =====
+logoutBtn.addEventListener("click", ()=>{
+  localStorage.removeItem("userId");
+  dashboardCard.classList.remove("active");
+  loginCard.classList.add("active");
+});
+
+// ===== Auto-login if user already logged in =====
+if(localStorage.getItem("userId")) showDashboard();
 </script>
 
 </body>
