@@ -1,195 +1,183 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Health Tracker</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <style>
-    .hidden { display: none; }
-    .nav-active { background-color: #4F46E5; color: white; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Health Tracker</title>
+<script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100">
 
-  <!-- ===== LOGIN & SIGNUP ===== -->
-  <div id="authPage" class="flex items-center justify-center h-screen">
-    <div class="bg-white p-8 rounded-lg shadow-md w-96">
-      <h2 class="text-2xl font-bold mb-4 text-center">Login</h2>
-      <input id="loginUsername" placeholder="Username" class="w-full border p-2 mb-2 rounded"/>
-      <input id="loginPassword" type="password" placeholder="Password" class="w-full border p-2 mb-4 rounded"/>
-      <button onclick="login()" class="w-full bg-blue-500 text-white p-2 rounded">Login</button>
+<!-- REGISTER -->
+<section id="register-section" class="min-h-screen flex items-center justify-center">
+  <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
+    <h2 class="text-2xl font-bold text-center text-blue-600 mb-6">Register</h2>
+    <form id="register-form" class="space-y-4">
+      <input type="text" id="reg-username" placeholder="Username" class="w-full p-3 border rounded-lg" required>
+      <input type="password" id="reg-password" placeholder="Password" class="w-full p-3 border rounded-lg" required>
+      <button type="submit" class="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600">Register</button>
+    </form>
+    <p class="mt-4 text-center">Already have an account? 
+      <a href="#" onclick="showLogin()" class="text-blue-600">Login</a>
+    </p>
+  </div>
+</section>
 
-      <p class="text-center mt-4">No account? 
-        <a href="#" onclick="toggleSignup()" class="text-blue-600">Sign up</a>
-      </p>
+<!-- LOGIN -->
+<section id="login-section" class="hidden min-h-screen flex items-center justify-center">
+  <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
+    <h2 class="text-2xl font-bold text-center text-green-600 mb-6">Login</h2>
+    <form id="login-form" class="space-y-4">
+      <input type="text" id="login-username" placeholder="Username" class="w-full p-3 border rounded-lg" required>
+      <input type="password" id="login-password" placeholder="Password" class="w-full p-3 border rounded-lg" required>
+      <button type="submit" class="w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600">Login</button>
+    </form>
+  </div>
+</section>
 
-      <div id="signupForm" class="hidden mt-6">
-        <h2 class="text-xl font-bold mb-2 text-center">Sign Up</h2>
-        <input id="signupUsername" placeholder="Username" class="w-full border p-2 mb-2 rounded"/>
-        <input id="signupPassword" type="password" placeholder="Password" class="w-full border p-2 mb-4 rounded"/>
-        <button onclick="signup()" class="w-full bg-green-500 text-white p-2 rounded">Sign Up</button>
-      </div>
+<!-- DASHBOARD -->
+<section id="dashboard-section" class="hidden min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-green-50">
+  <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-5xl">
+    <h2 class="text-2xl font-bold text-center text-green-600 mb-6">Health Dashboard</h2>
+
+    <!-- Add Record -->
+    <form id="record-form" class="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
+      <input type="date" id="date" required class="p-2 border rounded-lg">
+      <input type="number" id="water" placeholder="Water (glasses)" required class="p-2 border rounded-lg">
+      <input type="number" id="sleep" placeholder="Sleep (hrs)" required class="p-2 border rounded-lg">
+      <input type="number" id="exercise" placeholder="Exercise (min)" required class="p-2 border rounded-lg">
+      <input type="number" id="study" placeholder="Study (hrs)" required class="p-2 border rounded-lg">
+      <button type="submit" class="col-span-1 md:col-span-6 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">Add / Update</button>
+    </form>
+
+    <!-- Status -->
+    <div id="status-message" class="text-center font-semibold mb-4"></div>
+
+    <!-- Records Table -->
+    <div class="overflow-x-auto">
+      <table class="w-full border border-gray-200 rounded-lg">
+        <thead class="bg-green-100">
+          <tr>
+            <th class="p-3">Date</th>
+            <th class="p-3">Water</th>
+            <th class="p-3">Sleep</th>
+            <th class="p-3">Exercise</th>
+            <th class="p-3">Study</th>
+          </tr>
+        </thead>
+        <tbody id="records-table" class="divide-y divide-gray-200"></tbody>
+      </table>
     </div>
   </div>
+</section>
 
-  <!-- ===== DASHBOARD ===== -->
-  <div id="dashboardPage" class="hidden">
-    <!-- Top Navbar -->
-    <div class="flex justify-between items-center bg-indigo-600 p-4 text-white">
-      <h1 class="text-xl font-bold">📊 Health Tracker</h1>
-      <div>
-        <span id="userInfo" class="mr-4"></span>
-        <button onclick="logout()" class="bg-red-500 px-3 py-1 rounded">Logout</button>
-      </div>
-    </div>
+<script>
+const API_URL = "https://health-tracker-exp.onrender.com"; // your Render backend
+let currentUserId = null;
 
-    <!-- Navigation Tabs -->
-    <div class="flex bg-gray-200 p-2 space-x-2">
-      <button class="tab-btn px-4 py-2 rounded nav-active" data-tab="overview">Dashboard</button>
-      <button class="tab-btn px-4 py-2 rounded" data-tab="habits">Habits</button>
-      <button class="tab-btn px-4 py-2 rounded" data-tab="workouts">Workouts</button>
-      <button class="tab-btn px-4 py-2 rounded" data-tab="meals">Meals</button>
-      <button class="tab-btn px-4 py-2 rounded" data-tab="sleep">Sleep</button>
-      <button class="tab-btn px-4 py-2 rounded" data-tab="hydration">Hydration</button>
-      <button class="tab-btn px-4 py-2 rounded" data-tab="mood">Mood</button>
-      <button class="tab-btn px-4 py-2 rounded" data-tab="friends">Friends</button>
-    </div>
+const registerSection = document.getElementById("register-section");
+const loginSection = document.getElementById("login-section");
+const dashboardSection = document.getElementById("dashboard-section");
+const statusMessage = document.getElementById("status-message");
+const recordsTable = document.getElementById("records-table");
 
-    <!-- ===== Sections ===== -->
-    <div id="overview" class="tab-content p-6">
-      <h2 class="text-xl font-bold mb-4">Today Overview</h2>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="bg-white p-4 rounded shadow">Habit Streak: <span id="habitStreak">0</span> 🔥</div>
-        <div class="bg-white p-4 rounded shadow">Workouts This Week: <span id="workoutsThisWeek">0</span></div>
-        <div class="bg-white p-4 rounded shadow">Calories Today: <span id="caloriesToday">0</span></div>
-        <div class="bg-white p-4 rounded shadow">Water: <span id="hydrationToday">0</span> glasses</div>
-      </div>
-    </div>
+function showLogin() {
+  registerSection.classList.add("hidden");
+  loginSection.classList.remove("hidden");
+}
+function showDashboard() {
+  loginSection.classList.add("hidden");
+  registerSection.classList.add("hidden");
+  dashboardSection.classList.remove("hidden");
+  fetchRecords();
+}
 
-    <!-- Habits -->
-    <div id="habits" class="tab-content hidden p-6">
-      <h2 class="text-xl font-bold mb-4">Daily Habits</h2>
-      <input id="newHabit" placeholder="Add new habit..." class="border p-2 rounded"/>
-      <button onclick="addHabit()" class="bg-purple-500 text-white px-3 py-1 rounded ml-2">Add Habit</button>
-      <ul id="habitList" class="mt-4"></ul>
-    </div>
+// ==== Register ====
+document.getElementById("register-form").addEventListener("submit", async e=>{
+  e.preventDefault();
+  const username = document.getElementById("reg-username").value;
+  const password = document.getElementById("reg-password").value;
 
-    <!-- Workouts -->
-    <div id="workouts" class="tab-content hidden p-6">
-      <h2 class="text-xl font-bold mb-4">Log New Workout</h2>
-      <input id="workoutType" placeholder="Type (Running, Gym)" class="border p-2 rounded w-full mb-2"/>
-      <input id="workoutDuration" type="number" placeholder="Duration (min)" class="border p-2 rounded w-full mb-2"/>
-      <input id="workoutCalories" type="number" placeholder="Calories Burned" class="border p-2 rounded w-full mb-2"/>
-      <button onclick="addWorkout()" class="bg-blue-500 text-white px-3 py-1 rounded">Save Workout</button>
-      <h3 class="mt-4 font-bold">Recent Workouts</h3>
-      <ul id="workoutList"></ul>
-    </div>
+  const res = await fetch(`${API_URL}/register`, {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({username,password})
+  });
+  const data = await res.json();
+  alert(data.message || data.error);
+});
 
-    <!-- Meals -->
-    <div id="meals" class="tab-content hidden p-6">
-      <h2 class="text-xl font-bold mb-4">Log Meal</h2>
-      <select id="mealType" class="border p-2 rounded w-full mb-2">
-        <option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snack</option>
-      </select>
-      <input id="mealName" placeholder="Meal name" class="border p-2 rounded w-full mb-2"/>
-      <input id="mealCalories" type="number" placeholder="Calories" class="border p-2 rounded w-full mb-2"/>
-      <button onclick="addMeal()" class="bg-orange-500 text-white px-3 py-1 rounded">Save Meal</button>
-      <h3 class="mt-4 font-bold">Today's Meals</h3>
-      <ul id="mealList"></ul>
-    </div>
+// ==== Login ====
+document.getElementById("login-form").addEventListener("submit", async e=>{
+  e.preventDefault();
+  const username = document.getElementById("login-username").value;
+  const password = document.getElementById("login-password").value;
 
-    <!-- Sleep -->
-    <div id="sleep" class="tab-content hidden p-6">
-      <h2 class="text-xl font-bold mb-4">Sleep Tracking</h2>
-      <input id="bedtime" type="time" class="border p-2 rounded w-full mb-2"/>
-      <input id="wakeTime" type="time" class="border p-2 rounded w-full mb-2"/>
-      <select id="sleepQuality" class="border p-2 rounded w-full mb-2">
-        <option>Good</option><option>Average</option><option>Poor</option>
-      </select>
-      <button onclick="addSleep()" class="bg-purple-500 text-white px-3 py-1 rounded">Save Sleep Data</button>
-      <h3 class="mt-4 font-bold">Sleep History</h3>
-      <ul id="sleepList"></ul>
-    </div>
+  const res = await fetch(`${API_URL}/login`, {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({username,password})
+  });
+  const data = await res.json();
+  if(data.userId){
+    currentUserId = data.userId;
+    showDashboard();
+  } else alert(data.error);
+});
 
-    <!-- Hydration -->
-    <div id="hydration" class="tab-content hidden p-6">
-      <h2 class="text-xl font-bold mb-4">Hydration</h2>
-      <button onclick="addWater()" class="bg-blue-400 text-white px-3 py-1 rounded">+ Add Glass</button>
-      <p class="mt-2">Glasses Today: <span id="waterGlasses">0</span></p>
-    </div>
+// ==== Add/Update Record ====
+document.getElementById("record-form").addEventListener("submit", async e=>{
+  e.preventDefault();
+  const record = {
+    userId: currentUserId,
+    date: document.getElementById("date").value,
+    water: parseInt(document.getElementById("water").value),
+    sleep: parseInt(document.getElementById("sleep").value),
+    exercise: parseInt(document.getElementById("exercise").value),
+    study: parseInt(document.getElementById("study").value)
+  };
+  await fetch(`${API_URL}/update`, {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(record)
+  });
+  fetchRecords();
+});
 
-    <!-- Mood -->
-    <div id="mood" class="tab-content hidden p-6">
-      <h2 class="text-xl font-bold mb-4">Mood Tracker</h2>
-      <select id="moodSelect" class="border p-2 rounded w-full mb-2">
-        <option>😀 Happy</option><option>😐 Neutral</option><option>😢 Sad</option>
-      </select>
-      <button onclick="saveMood()" class="bg-green-500 text-white px-3 py-1 rounded">Save Mood</button>
-      <h3 class="mt-4 font-bold">Mood History</h3>
-      <ul id="moodList"></ul>
-    </div>
+// ==== Fetch Records & Show Dashboard ====
+async function fetchRecords(){
+  const res = await fetch(`${API_URL}/dashboard/${currentUserId}`);
+  const records = await res.json();
 
-    <!-- Friends -->
-    <div id="friends" class="tab-content hidden p-6">
-      <h2 class="text-xl font-bold mb-4">Friends</h2>
-      <input id="friendName" placeholder="Add friend..." class="border p-2 rounded"/>
-      <button onclick="addFriend()" class="bg-pink-500 text-white px-3 py-1 rounded ml-2">Add</button>
-      <ul id="friendList" class="mt-4"></ul>
-    </div>
-  </div>
+  recordsTable.innerHTML = "";
+  let latest = {water:0, sleep:0, exercise:0, study:0};
+  records.forEach(r=>{
+    const waterClass = r.water >= 8 ? "bg-green-100" : "bg-red-100";
+    const sleepClass = r.sleep >= 7 ? "bg-green-100" : "bg-red-100";
+    const exerciseClass = r.exercise >= 30 ? "bg-green-100" : "bg-red-100";
+    const studyClass = r.study >= 4 ? "bg-green-100" : "bg-red-100";
 
-  <script>
-    let currentUser = null;
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td class="p-3">${r.date}</td>
+      <td class="p-3 ${waterClass}">${r.water} ${r.water >= 8 ? "💧" : ""}</td>
+      <td class="p-3 ${sleepClass}">${r.sleep} ${r.sleep >= 7 ? "😴" : ""}</td>
+      <td class="p-3 ${exerciseClass}">${r.exercise} ${r.exercise >= 30 ? "🏋" : ""}</td>
+      <td class="p-3 ${studyClass}">${r.study} ${r.study >= 4 ? "📚" : ""}</td>
+    `;
+    recordsTable.appendChild(row);
+    if(!latest.date || r.date >= latest.date) latest = r;
+  });
 
-    function toggleSignup(){
-      document.getElementById("signupForm").classList.toggle("hidden");
-    }
-
-    async function signup(){
-      const username = document.getElementById("signupUsername").value;
-      const password = document.getElementById("signupPassword").value;
-      const res = await fetch("/register", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username,password})});
-      alert((await res.json()).message || "Error");
-    }
-
-    async function login(){
-      const username = document.getElementById("loginUsername").value;
-      const password = document.getElementById("loginPassword").value;
-      const res = await fetch("/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username,password})});
-      const data = await res.json();
-      if(data.userId){
-        currentUser = data.userId;
-        document.getElementById("authPage").classList.add("hidden");
-        document.getElementById("dashboardPage").classList.remove("hidden");
-        document.getElementById("userInfo").innerText = username;
-      } else alert("Invalid login");
-    }
-
-    function logout(){
-      currentUser = null;
-      document.getElementById("dashboardPage").classList.add("hidden");
-      document.getElementById("authPage").classList.remove("hidden");
-    }
-
-    // Tabs
-    document.querySelectorAll(".tab-btn").forEach(btn=>{
-      btn.addEventListener("click",()=>{
-        document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("nav-active"));
-        btn.classList.add("nav-active");
-        document.querySelectorAll(".tab-content").forEach(tab=>tab.classList.add("hidden"));
-        document.getElementById(btn.dataset.tab).classList.remove("hidden");
-      });
-    });
-
-    // Dummy local functions (connect to backend later)
-    function addHabit(){ let h=document.getElementById("newHabit").value; if(h){let li=document.createElement("li");li.innerText=h;document.getElementById("habitList").appendChild(li);} }
-    function addWorkout(){ let t=document.getElementById("workoutType").value; let li=document.createElement("li"); li.innerText=t; document.getElementById("workoutList").appendChild(li);}
-    function addMeal(){ let m=document.getElementById("mealName").value; let li=document.createElement("li"); li.innerText=m; document.getElementById("mealList").appendChild(li);}
-    function addSleep(){ let b=document.getElementById("bedtime").value; let li=document.createElement("li"); li.innerText="Sleep "+b; document.getElementById("sleepList").appendChild(li);}
-    function addWater(){ let w=document.getElementById("waterGlasses"); w.innerText=parseInt(w.innerText)+1; }
-    function saveMood(){ let m=document.getElementById("moodSelect").value; let li=document.createElement("li"); li.innerText=m; document.getElementById("moodList").appendChild(li);}
-    function addFriend(){ let f=document.getElementById("friendName").value; let li=document.createElement("li"); li.innerText=f; document.getElementById("friendList").appendChild(li);}
-  </script>
+  const messages = [];
+  if(latest.water>=8) messages.push("💧 Water goal met!");
+  if(latest.sleep>=7) messages.push("😴 Sleep goal met!");
+  if(latest.exercise>=30) messages.push("🏋 Exercise goal met!");
+  if(latest.study>=4) messages.push("📚 Study goal met!");
+  statusMessage.textContent = messages.length===4
+    ? "🎉 Great job! All goals met!"
+    : "Keep going! " + messages.join(" ");
+}
+</script>
 </body>
 </html>
