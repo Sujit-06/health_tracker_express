@@ -17,14 +17,13 @@ const db = new sqlite3.Database("./health_tracker.db", (err) => {
   else console.log("Connected to SQLite DB");
 });
 
-// Create tables if not exists
+// Create tables
 db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE,
     password TEXT
   )`);
-
   db.run(`CREATE TABLE IF NOT EXISTS habits (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
@@ -32,7 +31,6 @@ db.serialize(() => {
     streak INTEGER,
     FOREIGN KEY(user_id) REFERENCES users(id)
   )`);
-
   db.run(`CREATE TABLE IF NOT EXISTS workouts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
@@ -40,7 +38,6 @@ db.serialize(() => {
     sessions INTEGER,
     FOREIGN KEY(user_id) REFERENCES users(id)
   )`);
-
   db.run(`CREATE TABLE IF NOT EXISTS meals (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
@@ -48,7 +45,6 @@ db.serialize(() => {
     meals INTEGER,
     FOREIGN KEY(user_id) REFERENCES users(id)
   )`);
-
   db.run(`CREATE TABLE IF NOT EXISTS hydration (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
@@ -56,7 +52,6 @@ db.serialize(() => {
     glasses INTEGER,
     FOREIGN KEY(user_id) REFERENCES users(id)
   )`);
-
   db.run(`CREATE TABLE IF NOT EXISTS calories (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
@@ -66,40 +61,28 @@ db.serialize(() => {
   )`);
 });
 
-// ===== Routes =====
-
-// Register
-app.post("/register", (req, res) => {
+// Routes
+app.post("/register", (req,res)=>{
   const { username, password } = req.body;
   db.run(`INSERT INTO users(username,password) VALUES(?,?)`, [username,password], function(err){
-    if(err) return res.json({ error: "Username already exists" });
-    res.json({ message:"User registered", userId:this.lastID });
+    if(err) return res.json({error:"Username exists"});
+    res.json({message:"User registered", userId:this.lastID});
   });
 });
 
-// Login
 app.post("/login", (req,res)=>{
-  const { username, password } = req.body;
+  const { username,password } = req.body;
   db.get(`SELECT id FROM users WHERE username=? AND password=?`, [username,password], (err,row)=>{
-    if(err) return res.json({ error: err.message });
-    if(row) res.json({ userId: row.id });
-    else res.json({ error: "Invalid credentials" });
+    if(err) return res.json({error:err.message});
+    if(row) res.json({userId: row.id});
+    else res.json({error:"Invalid credentials"});
   });
 });
 
-// Dashboard
 app.get("/dashboard/:userId", (req,res)=>{
   const userId = req.params.userId;
   const labels = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-  
-  let data = {
-    labels,
-    habits: [],
-    workouts: [],
-    meals: [],
-    hydration: [],
-    calories: []
-  };
+  let data = {labels, habits:[], workouts:[], meals:[], hydration:[], calories:[]};
 
   db.all(`SELECT * FROM habits WHERE user_id=?`, [userId], (err,rows)=>{
     data.habits = rows;
@@ -119,48 +102,45 @@ app.get("/dashboard/:userId", (req,res)=>{
   });
 });
 
-// Add Workout
+// Add endpoints
 app.post("/workouts/:userId/add", (req,res)=>{
-  const { userId } = req.params;
-  const { day, sessions } = req.body;
-  db.get(`SELECT * FROM workouts WHERE user_id=? AND day=?`, [userId, day], (err,row)=>{
+  const {userId} = req.params;
+  const {day,sessions} = req.body;
+  db.get(`SELECT * FROM workouts WHERE user_id=? AND day=?`, [userId,day], (err,row)=>{
     if(row) db.run(`UPDATE workouts SET sessions=sessions+? WHERE id=?`, [sessions,row.id], ()=>res.json({success:true}));
     else db.run(`INSERT INTO workouts(user_id,day,sessions) VALUES(?,?,?)`, [userId,day,sessions], ()=>res.json({success:true}));
   });
 });
 
-// Add Meals
 app.post("/meals/:userId/add", (req,res)=>{
-  const { userId } = req.params;
-  const { day, meals } = req.body;
-  db.get(`SELECT * FROM meals WHERE user_id=? AND day=?`, [userId, day], (err,row)=>{
+  const {userId} = req.params;
+  const {day,meals} = req.body;
+  db.get(`SELECT * FROM meals WHERE user_id=? AND day=?`, [userId,day], (err,row)=>{
     if(row) db.run(`UPDATE meals SET meals=meals+? WHERE id=?`, [meals,row.id], ()=>res.json({success:true}));
     else db.run(`INSERT INTO meals(user_id,day,meals) VALUES(?,?,?)`, [userId,day,meals], ()=>res.json({success:true}));
   });
 });
 
-// Add Hydration
 app.post("/hydration/:userId/add", (req,res)=>{
-  const { userId } = req.params;
-  const { day, glasses } = req.body;
-  db.get(`SELECT * FROM hydration WHERE user_id=? AND day=?`, [userId, day], (err,row)=>{
+  const {userId} = req.params;
+  const {day,glasses} = req.body;
+  db.get(`SELECT * FROM hydration WHERE user_id=? AND day=?`, [userId,day], (err,row)=>{
     if(row) db.run(`UPDATE hydration SET glasses=glasses+? WHERE id=?`, [glasses,row.id], ()=>res.json({success:true}));
     else db.run(`INSERT INTO hydration(user_id,day,glasses) VALUES(?,?,?)`, [userId,day,glasses], ()=>res.json({success:true}));
   });
 });
 
-// Add Calories
 app.post("/calories/:userId/add", (req,res)=>{
-  const { userId } = req.params;
-  const { day, calories } = req.body;
-  db.get(`SELECT * FROM calories WHERE user_id=? AND day=?`, [userId, day], (err,row)=>{
+  const {userId} = req.params;
+  const {day,calories} = req.body;
+  db.get(`SELECT * FROM calories WHERE user_id=? AND day=?`, [userId,day], (err,row)=>{
     if(row) db.run(`UPDATE calories SET calories=calories+? WHERE id=?`, [calories,row.id], ()=>res.json({success:true}));
     else db.run(`INSERT INTO calories(user_id,day,calories) VALUES(?,?,?)`, [userId,day,calories], ()=>res.json({success:true}));
   });
 });
 
-// ===== Serve frontend =====
-app.get("/", (req,res)=> res.sendFile(path.join(__dirname,"public","index.html")));
+// Serve frontend
+app.get("/", (req,res)=>res.sendFile(path.join(__dirname,"public","index.html")));
 
-// ===== Start Server =====
+// Start
 app.listen(PORT, ()=>console.log(`Server running on port ${PORT}`));
