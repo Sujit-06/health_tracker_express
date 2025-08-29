@@ -133,7 +133,8 @@ th,td{border:1px solid #fff;padding:8px;text-align:center;}
 </div>
 
 <script>
-const API_URL="https://health-tracker-express.onrender.com";
+const API_URL = ""; // empty means same domain, works on Render and local
+
 const loginCard=document.getElementById("loginCard");
 const signupCard=document.getElementById("signupCard");
 const dashboardCard=document.getElementById("dashboardCard");
@@ -162,7 +163,11 @@ loginForm.addEventListener("submit",async e=>{
   localStorage.clear();
   const username=document.getElementById("loginEmail").value.trim();
   const password=document.getElementById("loginPassword").value.trim();
-  const res=await fetch(`${API_URL}/login`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username,password})});
+  const res=await fetch(`${API_URL}/login`,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({username,password})
+  });
   const data=await res.json();
   if(data.userId){localStorage.setItem("userId",data.userId);showDashboard();}
   else alert(data.error||"Login failed");
@@ -172,7 +177,11 @@ signupForm.addEventListener("submit",async e=>{
   e.preventDefault();
   const username=document.getElementById("signupEmail").value.trim();
   const password=document.getElementById("signupPassword").value.trim();
-  const res=await fetch(`${API_URL}/register`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username,password})});
+  const res=await fetch(`${API_URL}/register`,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({username,password})
+  });
   const data=await res.json();
   if(data.message){alert("Signup success");signupCard.classList.remove("active");loginCard.classList.add("active");}
   else alert(data.error||"Signup failed");
@@ -200,7 +209,7 @@ async function showDashboard(){
     {title:"Workouts",value:`${data.workouts_history.length} sessions`},
     {title:"Meals",value:`${data.meals_history.length} meals`},
     {title:"Calories",value:`${data.calories[data.calories.length-1]||0} kcal`},
-    {title:"Hydration",value:`${data.hydration[data.hydration.length-1]||0} glasses`}
+    {title:"Hydration",value:`${data.hydration[data.hydration.length-1]?.glasses||0} glasses`}
   ];
   cards.forEach(c=>{
     const div=document.createElement("div");
@@ -218,16 +227,18 @@ async function showDashboard(){
   caloriesChart=new Chart(document.getElementById("caloriesChart"),{type:"line",data:{labels,datasets:[{label:"Calories",data:data.calories,borderColor:"#48cae4",fill:false}]},options:{responsive:true}});
   workoutsChart=new Chart(document.getElementById("workoutsChart"),{type:"bar",data:{labels,datasets:[{label:"Workouts",data:data.workouts,backgroundColor:"#0077b6"}]},options:{responsive:true}});
   mealsChart=new Chart(document.getElementById("mealsChart"),{type:"line",data:{labels,datasets:[{label:"Meals",data:data.meals,borderColor:"#90e0ef",fill:false}]},options:{responsive:true}});
-  hydrationChart=new Chart(document.getElementById("hydrationChart"),{type:"bar",data:{labels,datasets:[{label:"Water",data:data.hydration,backgroundColor:"#023e8a"}]},options:{responsive:true}});
+  hydrationChart=new Chart(document.getElementById("hydrationChart"),{type:"bar",data:{labels,datasets:[{label:"Water",data:data.hydration.map(h=>h.glasses),backgroundColor:"#023e8a"}]},options:{responsive:true}});
 
+  // Habits table
   const habitsTable=document.getElementById("habitsTable");
   habitsTable.innerHTML="<tr><th>Habit</th><th>Streak</th><th>Completed Today</th><th>Action</th></tr>";
   data.habits.forEach(h=>{
     const tr=document.createElement("tr");
-    tr.innerHTML=`<td>${h.habit_name}</td><td>${h.streak} days</td><td><input type="checkbox" class="checkbox" ${h.completed_today?"checked":""} onclick="toggleHabit(${h.id},this.checked)"></td><td><button onclick="deleteHabit(${h.id})">Delete</button></td>`;
+    tr.innerHTML=`<td>${h.habit_name}</td><td>${h.streak} days</td><td><input type="checkbox" class="checkbox" ${h.completed_today?"checked":""} onclick="toggleHabit('${h.id}',this.checked)"></td><td><button onclick="deleteHabit('${h.id}')">Delete</button></td>`;
     habitsTable.appendChild(tr);
   });
 
+  // Workouts table
   const workoutsTable=document.getElementById("workoutsTable");
   workoutsTable.innerHTML="<tr><th>Date</th><th>Exercise</th><th>Sets</th><th>Reps</th><th>Duration</th></tr>";
   data.workouts_history?.forEach(w=>{
@@ -236,6 +247,7 @@ async function showDashboard(){
     workoutsTable.appendChild(tr);
   });
 
+  // Meals table
   const mealsTable=document.getElementById("mealsTable");
   mealsTable.innerHTML="<tr><th>Date</th><th>Food</th><th>Quantity</th><th>Calories</th></tr>";
   data.meals_history?.forEach(m=>{
@@ -244,14 +256,19 @@ async function showDashboard(){
     mealsTable.appendChild(tr);
   });
 
+  // Sleep table
   const sleepTable=document.getElementById("sleepTable");
   sleepTable.innerHTML="<tr><th>Date</th><th>Hours</th></tr>";
-  data.sleep.forEach(s=>{const tr=document.createElement("tr");tr.innerHTML=`<td>${s.date}</td><td>${s.hours}</td>`;sleepTable.appendChild(tr);});
+  data.sleep.forEach(s=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${s.date}</td><td>${s.hours}</td>`;
+    sleepTable.appendChild(tr);
+  });
 }
 
 if(localStorage.getItem("userId")) showDashboard();
 
-// HABITS
+// Habits actions
 document.getElementById("addHabitBtn").addEventListener("click",async()=>{
   const habit_name=document.getElementById("habitInput").value.trim();
   if(!habit_name) return;
@@ -273,7 +290,7 @@ async function toggleHabit(id,completed){
   showDashboard();
 }
 
-// WORKOUTS
+// Workouts
 document.getElementById("addWorkoutBtn").addEventListener("click",async()=>{
   const exercise=document.getElementById("exerciseInput").value.trim();
   const sets=parseInt(document.getElementById("setInput").value);
@@ -289,7 +306,7 @@ document.getElementById("addWorkoutBtn").addEventListener("click",async()=>{
   showDashboard();
 });
 
-// MEALS
+// Meals
 document.getElementById("addMealBtn").addEventListener("click",async()=>{
   const food=document.getElementById("foodInput").value.trim();
   const quantity=parseInt(document.getElementById("quantityInput").value);
@@ -303,7 +320,7 @@ document.getElementById("addMealBtn").addEventListener("click",async()=>{
   showDashboard();
 });
 
-// SLEEP
+// Sleep
 document.getElementById("addSleepBtn").addEventListener("click",async()=>{
   const date=document.getElementById("sleepDate").value;
   const hours=parseFloat(document.getElementById("sleepHours").value);
@@ -315,7 +332,7 @@ document.getElementById("addSleepBtn").addEventListener("click",async()=>{
   showDashboard();
 });
 
-// HYDRATION
+// Hydration
 document.getElementById("addGlassBtn").addEventListener("click",async()=>{
   const glasses=parseInt(document.getElementById("hydrationInput").value);
   if(!glasses || glasses<1) return;
