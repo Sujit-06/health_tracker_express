@@ -181,23 +181,21 @@ let caloriesChart,workoutsChart,mealsChart,hydrationChart;
 const overviewCards=document.getElementById("overviewCards");
 
 async function showDashboard(){
-  const userId=localStorage.getItem("userId");
-  if(!userId) return;
   loginCard.classList.remove("active");
   signupCard.classList.remove("active");
   dashboardCard.classList.add("active");
+  const userId=localStorage.getItem("userId");
   document.getElementById("userInfo").innerText="User #"+userId;
-
   const res=await fetch(`${API_URL}/dashboard/${userId}`);
   const data=await res.json();
 
   overviewCards.innerHTML="";
   const cards = [
-    {title:"Habit Streak",value:`🔥 ${data.habits.reduce((a,b)=>a+b.streak,0)} days`},
-    {title:"Workouts",value:`${data.workouts_history.length} sessions`},
-    {title:"Meals",value:`${data.meals_history.length} meals`},
-    {title:"Calories",value:`${data.calories.reduce((a,b)=>a+b.calories||0,0)} kcal`},
-    {title:"Hydration",value:`${data.hydration.reduce((a,b)=>a+b.glasses||0,0)} glasses`}
+    {title:"Habit Streak",value:`🔥 ${data.habits[0]?.streak||0} days`},
+    {title:"Workouts",value:`${data.workouts.reduce((a,b)=>a+b,0)} sessions`},
+    {title:"Meals",value:`${data.meals.reduce((a,b)=>a+b,0)} meals`},
+    {title:"Calories",value:`${data.calories[data.calories.length-1]||0} kcal`},
+    {title:"Hydration",value:`${data.hydration[data.hydration.length-1]||0} glasses`}
   ];
   cards.forEach(c=>{
     const div=document.createElement("div");
@@ -206,45 +204,56 @@ async function showDashboard(){
     overviewCards.appendChild(div);
   });
 
-  // HABITS TABLE
+  if(caloriesChart) caloriesChart.destroy();
+  if(workoutsChart) workoutsChart.destroy();
+  if(mealsChart) mealsChart.destroy();
+  if(hydrationChart) hydrationChart.destroy();
+
+  const labels=data.labels;
+  caloriesChart=new Chart(document.getElementById("caloriesChart"),{type:"line",data:{labels,datasets:[{label:"Calories",data:data.calories,borderColor:"#48cae4",fill:false}]},options:{responsive:true}});
+  workoutsChart=new Chart(document.getElementById("workoutsChart"),{type:"bar",data:{labels,datasets:[{label:"Workouts",data:data.workouts,backgroundColor:"#0077b6"}]},options:{responsive:true}});
+  mealsChart=new Chart(document.getElementById("mealsChart"),{type:"line",data:{labels,datasets:[{label:"Meals",data:data.meals,borderColor:"#90e0ef",fill:false}]},options:{responsive:true}});
+  hydrationChart=new Chart(document.getElementById("hydrationChart"),{type:"bar",data:{labels,datasets:[{label:"Water",data:data.hydration,backgroundColor:"#023e8a"}]},options:{responsive:true}});
+
   const habitsTable=document.getElementById("habitsTable");
-  habitsTable.innerHTML="<tr><th>Day</th><th>Habit</th><th>Streak</th><th>Completed Today</th><th>Action</th></tr>";
-  const today=new Date().toISOString().split('T')[0];
+  habitsTable.innerHTML="<tr><th>Habit</th><th>Streak</th><th>Completed Today</th><th>Action</th></tr>";
   data.habits.forEach(h=>{
     const tr=document.createElement("tr");
-    tr.innerHTML=`<td>${today}</td><td>${h.habit_name}</td><td>${h.streak}</td><td><input type="checkbox" class="checkbox" ${h.completed_today?"checked":""} onclick="toggleHabit(${h.id},this.checked)"></td><td><button onclick="deleteHabit(${h.id})">Delete</button></td>`;
+    tr.innerHTML=`<td>${h.habit_name}</td><td>${h.streak} days</td><td><input type="checkbox" class="checkbox" ${h.completed_today?"checked":""} onclick="toggleHabit(${h.id},this.checked)"></td><td><button onclick="deleteHabit(${h.id})">Delete</button></td>`;
     habitsTable.appendChild(tr);
   });
 
-  // WORKOUTS TABLE
   const workoutsTable=document.getElementById("workoutsTable");
-  workoutsTable.innerHTML="<tr><th>Day</th><th>Exercise</th><th>Sets</th><th>Reps</th><th>Duration</th></tr>";
-  data.workouts_history.forEach(w=>{
+  workoutsTable.innerHTML="<tr><th>Date</th><th>Exercise</th><th>Sets</th><th>Reps</th><th>Duration</th></tr>";
+  data.workouts_history?.forEach(w=>{
     const tr=document.createElement("tr");
     tr.innerHTML=`<td>${w.day}</td><td>${w.exercise}</td><td>${w.sets}</td><td>${w.reps}</td><td>${w.duration}</td>`;
     workoutsTable.appendChild(tr);
   });
 
-  // MEALS TABLE
   const mealsTable=document.getElementById("mealsTable");
-  mealsTable.innerHTML="<tr><th>Day</th><th>Food</th><th>Quantity</th><th>Calories</th></tr>";
-  data.meals_history.forEach(m=>{
+  mealsTable.innerHTML="<tr><th>Date</th><th>Food</th><th>Quantity</th><th>Calories</th></tr>";
+  data.meals_history?.forEach(m=>{
     const tr=document.createElement("tr");
     tr.innerHTML=`<td>${m.day}</td><td>${m.food}</td><td>${m.quantity}</td><td>${m.calories}</td>`;
     mealsTable.appendChild(tr);
   });
+
+  const sleepTable=document.getElementById("sleepTable");
+  sleepTable.innerHTML="<tr><th>Date</th><th>Hours</th></tr>";
+  data.sleep.forEach(s=>{const tr=document.createElement("tr");tr.innerHTML=`<td>${s.date}</td><td>${s.hours}</td>`;sleepTable.appendChild(tr);});
 }
 
 if(localStorage.getItem("userId")) showDashboard();
 
-// EVENT LISTENERS
 document.getElementById("addHabitBtn").addEventListener("click",async()=>{
   const habit_name=document.getElementById("habitInput").value.trim();
   if(!habit_name) return;
   const userId=localStorage.getItem("userId");
-  await fetch(`${API_URL}/habits/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({habit_name})});
-  document.getElementById("habitInput").value="";
-  showDashboard();
+  const res=await fetch(`${API_URL}/habits/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({habit_name})});
+  const data=await res.json();
+  if(data.success){document.getElementById("habitInput").value="";showDashboard();}
+  else alert(data.error);
 });
 
 document.getElementById("addWorkoutBtn").addEventListener("click",async()=>{
@@ -270,6 +279,32 @@ document.getElementById("addMealBtn").addEventListener("click",async()=>{
   await fetch(`${API_URL}/meals/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({food,quantity})});
   document.getElementById("foodInput").value="";
   document.getElementById("quantityInput").value="";
+  showDashboard();
+});
+
+document.getElementById("addSleepBtn").addEventListener("click",async()=>{
+  const date=document.getElementById("sleepDate").value;
+  const hours=parseFloat(document.getElementById("sleepHours").value);
+  if(!date||!hours) return;
+  const userId=localStorage.getItem("userId");
+  await fetch(`${API_URL}/sleep/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({date,hours})});
+  document.getElementById("sleepDate").value="";
+  document.getElementById("sleepHours").value="";
+  showDashboard();
+});
+
+document.getElementById("addGlassBtn").addEventListener("click",async()=>{
+  const glasses=parseInt(document.getElementById("hydrationInput").value);
+  if(!glasses || glasses<1) return;
+  const userId=localStorage.getItem("userId");
+  await fetch(`${API_URL}/hydration/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({glasses})});
+  document.getElementById("hydrationInput").value="";
+  showDashboard();
+});
+
+document.getElementById("resetGlassBtn").addEventListener("click",async()=>{
+  const userId=localStorage.getItem("userId");
+  await fetch(`${API_URL}/hydration/${userId}/reset`,{method:"POST"});
   showDashboard();
 });
 
