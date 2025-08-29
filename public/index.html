@@ -8,7 +8,7 @@
 <style>
 html,body{margin:0;padding:0;font-family:'Segoe UI',Arial,sans-serif;background:linear-gradient(120deg,#a2d4f6 60%,#023e8a 100%);height:100%;color:#fff;}
 .container{width:95%;max-width:1000px;margin:20px auto;}
-.card{background:rgba(255,255,255,0.1);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12);padding:20px;border-radius:20px;margin-bottom:20px;display:none;}
+.card{background:rgba(255,255,255,0.1);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:20px;border-radius:20px;margin-bottom:20px;display:none;}
 .card.active{display:block;}
 input,button{padding:10px;margin:5px;border-radius:8px;border:none;}
 button{background:#023e8a;color:#fff;font-weight:bold;cursor:pointer;transition:0.3s;}
@@ -16,7 +16,6 @@ button:hover{background:#0077b6;}
 .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;}
 .nav span{cursor:pointer;padding:8px 12px;background:rgba(255,255,255,0.12);margin-right:5px;border-radius:8px;transition:0.3s;}
 .nav span:hover{background:rgba(255,255,255,0.2);}
-.nav span.active{background:rgba(255,255,255,0.25);}
 .flex-row{display:flex;gap:15px;align-items:center;flex-wrap:wrap;justify-content:center;}
 .overview-card{flex:1 1 120px;background:rgba(255,255,255,0.15);padding:15px;border-radius:15px;text-align:center;}
 label{display:block;margin-top:10px;}
@@ -88,8 +87,6 @@ th,td{border:1px solid #fff;padding:8px;text-align:center;}
 <!-- HABITS -->
 <div id="habitsTab" class="tabContent" style="display:none;">
 <h3>Habits</h3>
-<label>Date</label>
-<input type="date" id="habitDate">
 <label>Habit Name</label>
 <input type="text" id="habitInput" placeholder="Habit">
 <button id="addHabitBtn">Add Habit</button>
@@ -99,8 +96,6 @@ th,td{border:1px solid #fff;padding:8px;text-align:center;}
 <!-- WORKOUTS -->
 <div id="workoutsTab" class="tabContent" style="display:none;">
 <h3>Workouts</h3>
-<label>Date</label>
-<input type="date" id="workoutDate">
 <label>Exercise</label><input type="text" id="exerciseInput" placeholder="Exercise">
 <label>Sets</label><input type="number" id="setInput" placeholder="Sets">
 <label>Reps</label><input type="number" id="repsInput" placeholder="Reps">
@@ -113,8 +108,6 @@ th,td{border:1px solid #fff;padding:8px;text-align:center;}
 <!-- MEALS -->
 <div id="mealsTab" class="tabContent" style="display:none;">
 <h3>Meals</h3>
-<label>Date</label>
-<input type="date" id="mealDate">
 <label>Food</label><input type="text" id="foodInput" placeholder="Food">
 <label>Quantity</label><input type="number" id="quantityInput" placeholder="Qty">
 <button id="addMealBtn">Add Meal</button>
@@ -219,134 +212,113 @@ async function showDashboard(){
   const labels=data.labels;
   caloriesChart=new Chart(document.getElementById("caloriesChart"),{type:"line",data:{labels,datasets:[{label:"Calories",data:data.calories,borderColor:"#48cae4",fill:false}]},options:{responsive:true}});
   workoutsChart=new Chart(document.getElementById("workoutsChart"),{type:"bar",data:{labels,datasets:[{label:"Workouts",data:data.workouts,backgroundColor:"#0077b6"}]},options:{responsive:true}});
-  mealsChart=new Chart(document.getElementById("mealsChart"),{type:"bar",data:{labels,datasets:[{label:"Meals",data:data.meals,backgroundColor:"#023e8a"}]},options:{responsive:true}});
-  hydrationChart=new Chart(document.getElementById("hydrationChart"),{type:"bar",data:{labels,datasets:[{label:"Glasses",data:data.hydration,backgroundColor:"#48cae4"}]},options:{responsive:true}});
+  mealsChart=new Chart(document.getElementById("mealsChart"),{type:"line",data:{labels,datasets:[{label:"Meals",data:data.meals,borderColor:"#90e0ef",fill:false}]},options:{responsive:true}});
+  hydrationChart=new Chart(document.getElementById("hydrationChart"),{type:"bar",data:{labels,datasets:[{label:"Water",data:data.hydration,backgroundColor:"#023e8a"}]},options:{responsive:true}});
 
-  populateHabits(data.habits);
-  populateWorkouts(data.workouts_history);
-  populateMeals(data.meals_history);
-  populateSleep(data.sleep);
-}
-
-// HABITS
-const habitInput=document.getElementById("habitInput");
-const habitDate=document.getElementById("habitDate");
-const addHabitBtn=document.getElementById("addHabitBtn");
-const habitsTable=document.getElementById("habitsTable");
-addHabitBtn.addEventListener("click",async()=>{
-  const habit_name=habitInput.value.trim(); 
-  const date = habitDate.value;
-  if(!habit_name || !date) return alert("Enter habit name and date");
-  const userId=localStorage.getItem("userId");
-  await fetch(`${API_URL}/habits/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({habit_name,date})});
-  habitInput.value=""; habitDate.value="";
-  showDashboard();
-});
-function populateHabits(habits){
-  habitsTable.innerHTML=`<tr><th>Date</th><th>Habit</th><th>Streak</th><th>Completed Today</th><th>Action</th></tr>`;
-  const userId=localStorage.getItem("userId");
-  habits.forEach(h=>{
+  const habitsTable=document.getElementById("habitsTable");
+  habitsTable.innerHTML="<tr><th>Habit</th><th>Streak</th><th>Completed Today</th><th>Action</th></tr>";
+  data.habits.forEach(h=>{
     const tr=document.createElement("tr");
-    tr.innerHTML=`<td>${h.date||''}</td><td>${h.habit_name}</td><td>${h.streak}</td><td><input type="checkbox" class="checkbox" ${h.completed_today?'checked':''}></td><td><button class="deleteBtn">Delete</button></td>`;
-    tr.querySelector(".checkbox").addEventListener("change",async e=>{
-      await fetch(`${API_URL}/habits/${userId}/toggle/${h.id}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({completed:e.target.checked})});
-      showDashboard();
-    });
-    tr.querySelector(".deleteBtn").addEventListener("click",async()=>{
-      await fetch(`${API_URL}/habits/${userId}/delete/${h.id}`,{method:"POST"});
-      showDashboard();
-    });
+    tr.innerHTML=`<td>${h.habit_name}</td><td>${h.streak} days</td><td><input type="checkbox" class="checkbox" ${h.completed_today?"checked":""} onclick="toggleHabit(${h.id},this.checked)"></td><td><button onclick="deleteHabit(${h.id})">Delete</button></td>`;
     habitsTable.appendChild(tr);
   });
-}
 
-// WORKOUTS
-const workoutDate=document.getElementById("workoutDate");
-addWorkoutBtn=document.getElementById("addWorkoutBtn");
-const exerciseInput=document.getElementById("exerciseInput");
-const setInput=document.getElementById("setInput");
-const repsInput=document.getElementById("repsInput");
-const durationInput=document.getElementById("durationInput");
-const workoutsTable=document.getElementById("workoutsTable");
-addWorkoutBtn.addEventListener("click",async()=>{
-  const userId=localStorage.getItem("userId");
-  const date = workoutDate.value;
-  if(!date || !exerciseInput.value) return alert("Enter date and exercise");
-  await fetch(`${API_URL}/workouts/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({date,exercise:exerciseInput.value,sets:setInput.value,reps:repsInput.value,duration:durationInput.value})});
-  exerciseInput.value=setInput.value=repsInput.value=durationInput.value=workoutDate.value="";
-  showDashboard();
-});
-function populateWorkouts(workouts){
-  workoutsTable.innerHTML=`<tr><th>Date</th><th>Exercise</th><th>Sets</th><th>Reps</th><th>Duration</th></tr>`;
-  workouts.forEach(w=>{
+  const workoutsTable=document.getElementById("workoutsTable");
+  workoutsTable.innerHTML="<tr><th>Date</th><th>Exercise</th><th>Sets</th><th>Reps</th><th>Duration</th></tr>";
+  data.workouts_history?.forEach(w=>{
     const tr=document.createElement("tr");
-    tr.innerHTML=`<td>${w.date||w.day}</td><td>${w.exercise}</td><td>${w.sets}</td><td>${w.reps}</td><td>${w.duration}</td>`;
+    tr.innerHTML=`<td>${w.day}</td><td>${w.exercise}</td><td>${w.sets}</td><td>${w.reps}</td><td>${w.duration}</td>`;
     workoutsTable.appendChild(tr);
   });
-}
 
-// MEALS
-const mealDate=document.getElementById("mealDate");
-addMealBtn=document.getElementById("addMealBtn");
-const foodInput=document.getElementById("foodInput");
-const quantityInput=document.getElementById("quantityInput");
-const mealsTable=document.getElementById("mealsTable");
-addMealBtn.addEventListener("click",async()=>{
-  const userId=localStorage.getItem("userId");
-  const date = mealDate.value;
-  if(!date || !foodInput.value) return alert("Enter date and food");
-  await fetch(`${API_URL}/meals/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({date,food:foodInput.value,quantity:quantityInput.value})});
-  foodInput.value=quantityInput.value=mealDate.value="";
-  showDashboard();
-});
-function populateMeals(meals){
-  mealsTable.innerHTML=`<tr><th>Date</th><th>Food</th><th>Qty</th><th>Calories</th></tr>`;
-  meals.forEach(m=>{
+  const mealsTable=document.getElementById("mealsTable");
+  mealsTable.innerHTML="<tr><th>Date</th><th>Food</th><th>Quantity</th><th>Calories</th></tr>";
+  data.meals_history?.forEach(m=>{
     const tr=document.createElement("tr");
-    tr.innerHTML=`<td>${m.date||m.day}</td><td>${m.food}</td><td>${m.quantity}</td><td>${m.calories}</td>`;
+    tr.innerHTML=`<td>${m.day}</td><td>${m.food}</td><td>${m.quantity}</td><td>${m.calories}</td>`;
     mealsTable.appendChild(tr);
   });
+
+  const sleepTable=document.getElementById("sleepTable");
+  sleepTable.innerHTML="<tr><th>Date</th><th>Hours</th></tr>";
+  data.sleep.forEach(s=>{const tr=document.createElement("tr");tr.innerHTML=`<td>${s.date}</td><td>${s.hours}</td>`;sleepTable.appendChild(tr);});
 }
 
-// HYDRATION
-const hydrationInput=document.getElementById("hydrationInput");
-const addGlassBtn=document.getElementById("addGlassBtn");
-const resetGlassBtn=document.getElementById("resetGlassBtn");
-addGlassBtn.addEventListener("click",async()=>{
+if(localStorage.getItem("userId")) showDashboard();
+
+document.getElementById("addHabitBtn").addEventListener("click",async()=>{
+  const habit_name=document.getElementById("habitInput").value.trim();
+  if(!habit_name) return;
   const userId=localStorage.getItem("userId");
-  await fetch(`${API_URL}/hydration/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({glasses:parseInt(hydrationInput.value)})});
-  hydrationInput.value=""; showDashboard();
+  const res=await fetch(`${API_URL}/habits/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({habit_name})});
+  const data=await res.json();
+  if(data.success){document.getElementById("habitInput").value="";showDashboard();}
+  else alert(data.error);
 });
-resetGlassBtn.addEventListener("click",async()=>{
+
+document.getElementById("addWorkoutBtn").addEventListener("click",async()=>{
+  const exercise=document.getElementById("exerciseInput").value.trim();
+  const sets=parseInt(document.getElementById("setInput").value);
+  const reps=parseInt(document.getElementById("repsInput").value);
+  const duration=parseInt(document.getElementById("durationInput").value);
+  if(!exercise||!sets||!reps||!duration) return;
+  const userId=localStorage.getItem("userId");
+  await fetch(`${API_URL}/workouts/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({exercise,sets,reps,duration})});
+  document.getElementById("exerciseInput").value="";
+  document.getElementById("setInput").value="";
+  document.getElementById("repsInput").value="";
+  document.getElementById("durationInput").value="";
+  showDashboard();
+});
+
+document.getElementById("addMealBtn").addEventListener("click",async()=>{
+  const food=document.getElementById("foodInput").value.trim();
+  const quantity=parseInt(document.getElementById("quantityInput").value);
+  if(!food||!quantity) return;
+  const userId=localStorage.getItem("userId");
+  await fetch(`${API_URL}/meals/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({food,quantity})});
+  document.getElementById("foodInput").value="";
+  document.getElementById("quantityInput").value="";
+  showDashboard();
+});
+
+document.getElementById("addSleepBtn").addEventListener("click",async()=>{
+  const date=document.getElementById("sleepDate").value;
+  const hours=parseFloat(document.getElementById("sleepHours").value);
+  if(!date||!hours) return;
+  const userId=localStorage.getItem("userId");
+  await fetch(`${API_URL}/sleep/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({date,hours})});
+  document.getElementById("sleepDate").value="";
+  document.getElementById("sleepHours").value="";
+  showDashboard();
+});
+
+document.getElementById("addGlassBtn").addEventListener("click",async()=>{
+  const glasses=parseInt(document.getElementById("hydrationInput").value);
+  if(!glasses || glasses<1) return;
+  const userId=localStorage.getItem("userId");
+  await fetch(`${API_URL}/hydration/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({glasses})});
+  document.getElementById("hydrationInput").value="";
+  showDashboard();
+});
+
+document.getElementById("resetGlassBtn").addEventListener("click",async()=>{
   const userId=localStorage.getItem("userId");
   await fetch(`${API_URL}/hydration/${userId}/reset`,{method:"POST"});
   showDashboard();
 });
 
-// SLEEP
-const sleepDate=document.getElementById("sleepDate");
-const sleepHours=document.getElementById("sleepHours");
-const addSleepBtn=document.getElementById("addSleepBtn");
-const sleepTable=document.getElementById("sleepTable");
-addSleepBtn.addEventListener("click",async()=>{
+async function deleteHabit(id){
   const userId=localStorage.getItem("userId");
-  if(!sleepDate.value || !sleepHours.value) return alert("Enter date and hours");
-  await fetch(`${API_URL}/sleep/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({date:sleepDate.value,hours:sleepHours.value})});
-  sleepDate.value=sleepHours.value="";
+  await fetch(`${API_URL}/habits/${userId}/delete/${id}`,{method:"POST"});
   showDashboard();
-});
-function populateSleep(sleep){
-  sleepTable.innerHTML=`<tr><th>Date</th><th>Hours</th></tr>`;
-  sleep.forEach(s=>{
-    const tr=document.createElement("tr");
-    tr.innerHTML=`<td>${s.date}</td><td>${s.hours}</td>`;
-    sleepTable.appendChild(tr);
-  });
 }
 
-// AUTO LOAD DASHBOARD IF LOGGED IN
-if(localStorage.getItem("userId")) showDashboard();
-
+async function toggleHabit(id,completed){
+  const userId=localStorage.getItem("userId");
+  await fetch(`${API_URL}/habits/${userId}/toggle/${id}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({completed})});
+  showDashboard();
+}
 </script>
 </body>
 </html>
