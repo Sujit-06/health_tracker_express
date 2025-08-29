@@ -1,11 +1,15 @@
-const express = require("express");
+const express = require("express"); 
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const { v4: uuidv4 } = require("uuid");
+const path = require("path");
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
+
+// Serve static frontend files
+app.use(express.static(path.join(__dirname, "public"))); // put index.html inside 'public' folder
 
 const PORT = process.env.PORT || 3000;
 
@@ -52,7 +56,6 @@ app.get("/dashboard/:userId", (req, res) => {
   const user = users[req.params.userId];
   if (!user) return res.json({ error: "User not found" });
 
-  // Prepare labels (dates) for charts (last 7 days)
   const labels = [];
   const calories = [];
   const workouts = [];
@@ -65,21 +68,17 @@ app.get("/dashboard/:userId", (req, res) => {
     const dateStr = d.toISOString().split("T")[0];
     labels.push(dateStr);
 
-    // Calories
     const dayCalories = user.meals_history
       .filter(m => m.day === dateStr)
       .reduce((sum, m) => sum + m.calories, 0);
     calories.push(dayCalories);
 
-    // Workouts
     const dayWorkouts = user.workouts_history.filter(w => w.day === dateStr).length;
     workouts.push(dayWorkouts);
 
-    // Meals
     const dayMeals = user.meals_history.filter(m => m.day === dateStr).length;
     meals.push(dayMeals);
 
-    // Hydration
     const dayHydration = user.hydration.find(h => h.day === dateStr)?.glasses || 0;
     hydration.push(dayHydration);
   }
@@ -90,10 +89,10 @@ app.get("/dashboard/:userId", (req, res) => {
     meals_history: user.meals_history,
     sleep: user.sleep,
     hydration: user.hydration,
-    calories: calories,
-    workouts: workouts,
-    meals: meals,
-    labels: labels
+    calories,
+    workouts,
+    meals,
+    labels
   });
 });
 
@@ -121,8 +120,7 @@ app.post("/habits/:userId/toggle/:habitId", (req, res) => {
   if (!habit) return res.json({ error: "Habit not found" });
   const { completed } = req.body;
   habit.completed_today = completed;
-  if (completed) habit.streak += 1;
-  else habit.streak = Math.max(habit.streak - 1, 0);
+  habit.streak = completed ? habit.streak + 1 : Math.max(habit.streak - 1, 0);
   res.json({ message: "Habit updated" });
 });
 
@@ -169,6 +167,11 @@ app.post("/hydration/:userId/reset", (req, res) => {
   if (!user) return res.json({ error: "User not found" });
   user.hydration = user.hydration.filter(h => h.day !== today());
   res.json({ message: "Hydration reset" });
+});
+
+// Serve frontend for any other GET request
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 app.listen(PORT, () => {
