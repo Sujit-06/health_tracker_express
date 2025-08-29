@@ -4,11 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Health Tracker</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 html,body{margin:0;padding:0;font-family:'Segoe UI',Arial,sans-serif;background:linear-gradient(120deg,#a2d4f6 60%,#023e8a 100%);height:100%;color:#fff;}
 .container{width:95%;max-width:1000px;margin:20px auto;}
-.card{background:rgba(255,255,255,0.1);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:20px;border-radius:20px;margin-bottom:20px;display:none;}
+.card{background:rgba(255,255,255,0.1);backdrop-filter:blur(12px);padding:20px;border-radius:20px;margin-bottom:20px;display:none;}
 .card.active{display:block;}
 input,button{padding:10px;margin:5px;border-radius:8px;border:none;}
 button{background:#023e8a;color:#fff;font-weight:bold;cursor:pointer;transition:0.3s;}
@@ -17,132 +16,111 @@ button:hover{background:#0077b6;}
 .nav span{cursor:pointer;padding:8px 12px;background:rgba(255,255,255,0.12);margin-right:5px;border-radius:8px;transition:0.3s;}
 .nav span:hover{background:rgba(255,255,255,0.2);}
 .flex-row{display:flex;gap:15px;align-items:center;flex-wrap:wrap;justify-content:center;}
-.overview-card{flex:1 1 120px;background:rgba(255,255,255,0.15);padding:15px;border-radius:15px;text-align:center;}
+.overview-card{flex:1 1 180px;background:rgba(255,255,255,0.15);padding:15px;border-radius:15px;text-align:center;}
 label{display:block;margin-top:10px;}
-table{width:100%;border-collapse:collapse;margin-top:10px;}
-th,td{border:1px solid #fff;padding:8px;text-align:center;}
-.checkbox{cursor:pointer;transform:scale(1.2);}
 </style>
 </head>
 <body>
 <div class="container">
 
-<!-- LOGIN CARD -->
+<!-- LOGIN -->
 <div id="loginCard" class="card active">
-<h2>Login</h2>
-<form id="loginForm">
-<input type="email" id="loginEmail" placeholder="Email" required><br>
-<input type="password" id="loginPassword" placeholder="Password" required><br>
-<button type="submit">Sign In</button>
-</form>
-<p>Don't have account? <span id="showSignup" style="cursor:pointer;color:#48cae4;">Sign Up</span></p>
+  <h2>Login</h2>
+  <form id="loginForm">
+    <input type="email" id="loginEmail" placeholder="Email" required><br>
+    <input type="password" id="loginPassword" placeholder="Password" required><br>
+    <button type="submit">Sign In</button>
+  </form>
+  <p>Don't have account? <span id="showSignup" style="cursor:pointer;color:#48cae4;">Sign Up</span></p>
 </div>
 
-<!-- SIGNUP CARD -->
+<!-- SIGNUP -->
 <div id="signupCard" class="card">
-<h2>Sign Up</h2>
-<form id="signupForm">
-<input type="email" id="signupEmail" placeholder="Email" required><br>
-<input type="password" id="signupPassword" placeholder="Password" required><br>
-<button type="submit">Sign Up</button>
-</form>
-<p>Already have account? <span id="showLogin" style="cursor:pointer;color:#48cae4;">Login</span></p>
+  <h2>Sign Up</h2>
+  <form id="signupForm">
+    <input type="email" id="signupEmail" placeholder="Email" required><br>
+    <input type="password" id="signupPassword" placeholder="Password" required><br>
+    <button type="submit">Sign Up</button>
+  </form>
+  <p>Already have account? <span id="showLogin" style="cursor:pointer;color:#48cae4;">Login</span></p>
 </div>
 
-<!-- DASHBOARD CARD -->
+<!-- DASHBOARD -->
 <div id="dashboardCard" class="card">
-<div class="topbar">
-<div class="nav">
-<span class="tab active" data-tab="overview">Dashboard</span>
-<span class="tab" data-tab="habits">Habits</span>
-<span class="tab" data-tab="workouts">Workouts</span>
-<span class="tab" data-tab="meals">Meals</span>
-<span class="tab" data-tab="sleep">Sleep</span>
-</div>
-<div>
-<span id="userInfo">Hi User</span> | <button id="logoutBtn">Logout</button>
-</div>
-</div>
+  <div class="topbar">
+    <div class="nav">
+      <span class="tab active" data-tab="overview">Dashboard</span>
+      <span class="tab" data-tab="sleep">Sleep</span>
+      <span class="tab" data-tab="study">Study</span>
+      <span class="tab" data-tab="meals">Meals</span>
+      <span class="tab" data-tab="hydration">Water</span>
+    </div>
+    <div>
+      <span id="userInfo">Hi User</span> | <button id="logoutBtn">Logout</button>
+    </div>
+  </div>
 
-<div id="tabContents">
+  <div id="tabContents">
 
-<!-- OVERVIEW -->
-<div id="overviewTab" class="tabContent active">
-<h3>Today's Overview</h3>
-<div id="overviewCards" class="flex-row"></div>
+    <!-- OVERVIEW -->
+    <div id="overviewTab" class="tabContent active">
+      <h3>Today's Health Check</h3>
+      <div id="overviewCards" class="flex-row"></div>
+      <h3 id="healthMessage" style="text-align:center;margin-top:20px;"></h3>
+    </div>
 
-<div class="flex-row">
-<label>Add Glasses</label>
-<input type="number" id="hydrationInput" placeholder="Glasses" min="1" style="width:100px;">
-<button id="addGlassBtn">Add</button>
-<button id="resetGlassBtn">Reset Today</button>
-</div>
+    <!-- SLEEP -->
+    <div id="sleepTab" class="tabContent" style="display:none;">
+      <h3>Sleep</h3>
+      <label>Date</label>
+      <input type="date" id="sleepDate">
+      <label>Hours</label>
+      <input type="number" id="sleepHours" placeholder="Hours">
+      <button id="addSleepBtn">Save</button>
+    </div>
 
-<canvas id="caloriesChart" style="margin-top:20px;"></canvas>
-<canvas id="workoutsChart" style="margin-top:20px;"></canvas>
-<canvas id="mealsChart" style="margin-top:20px;"></canvas>
-<canvas id="hydrationChart" style="margin-top:20px;"></canvas>
-</div>
+    <!-- STUDY -->
+    <div id="studyTab" class="tabContent" style="display:none;">
+      <h3>Study</h3>
+      <label>Date</label>
+      <input type="date" id="studyDate">
+      <label>Hours</label>
+      <input type="number" id="studyHours" placeholder="Hours">
+      <button id="addStudyBtn">Save</button>
+    </div>
 
-<!-- HABITS -->
-<div id="habitsTab" class="tabContent" style="display:none;">
-<h3>Habits</h3>
-<label>Habit Name</label>
-<input type="text" id="habitInput" placeholder="Habit">
-<button id="addHabitBtn">Add Habit</button>
-<table id="habitsTable"></table>
-</div>
+    <!-- MEALS -->
+    <div id="mealsTab" class="tabContent" style="display:none;">
+      <h3>Meals</h3>
+      <label>Food</label><input type="text" id="foodInput" placeholder="Food">
+      <button id="addMealBtn">Add Meal</button>
+    </div>
 
-<!-- WORKOUTS -->
-<div id="workoutsTab" class="tabContent" style="display:none;">
-<h3>Workouts</h3>
-<label>Exercise</label><input type="text" id="exerciseInput" placeholder="Exercise">
-<label>Sets</label><input type="number" id="setInput" placeholder="Sets">
-<label>Reps</label><input type="number" id="repsInput" placeholder="Reps">
-<label>Duration (min)</label><input type="number" id="durationInput" placeholder="Minutes">
-<button id="addWorkoutBtn">Add Workout</button>
-<h4>Workout History</h4>
-<table id="workoutsTable"></table>
-</div>
+    <!-- HYDRATION -->
+    <div id="hydrationTab" class="tabContent" style="display:none;">
+      <h3>Water Intake</h3>
+      <label>Glasses</label>
+      <input type="number" id="hydrationInput" placeholder="Glasses">
+      <button id="addGlassBtn">Save</button>
+    </div>
 
-<!-- MEALS -->
-<div id="mealsTab" class="tabContent" style="display:none;">
-<h3>Meals</h3>
-<label>Food</label><input type="text" id="foodInput" placeholder="Food">
-<label>Quantity</label><input type="number" id="quantityInput" placeholder="Qty">
-<button id="addMealBtn">Add Meal</button>
-<h4>Meals Today</h4>
-<table id="mealsTable"></table>
-</div>
-
-<!-- SLEEP -->
-<div id="sleepTab" class="tabContent" style="display:none;">
-<h3>Sleep</h3>
-<label>Date</label>
-<input type="date" id="sleepDate">
-<label>Hours</label>
-<input type="number" id="sleepHours" placeholder="Hours">
-<button id="addSleepBtn">Save</button>
-<table id="sleepTable"></table>
-</div>
-
-</div>
+  </div>
 </div>
 </div>
 
 <script>
 const API_URL = "https://health-tracker-express.onrender.com";
 
-const loginCard = document.getElementById("loginCard");
-const signupCard = document.getElementById("signupCard");
-const dashboardCard = document.getElementById("dashboardCard");
-const showSignup = document.getElementById("showSignup");
-const showLogin = document.getElementById("showLogin");
-const loginForm = document.getElementById("loginForm");
-const signupForm = document.getElementById("signupForm");
-const logoutBtn = document.getElementById("logoutBtn");
-const tabs = document.querySelectorAll(".tab");
-const tabContents = document.querySelectorAll(".tabContent");
+const loginCard=document.getElementById("loginCard");
+const signupCard=document.getElementById("signupCard");
+const dashboardCard=document.getElementById("dashboardCard");
+const showSignup=document.getElementById("showSignup");
+const showLogin=document.getElementById("showLogin");
+const loginForm=document.getElementById("loginForm");
+const signupForm=document.getElementById("signupForm");
+const logoutBtn=document.getElementById("logoutBtn");
+const tabs=document.querySelectorAll(".tab");
+const tabContents=document.querySelectorAll(".tabContent");
 
 tabs.forEach(tab=>{
   tab.addEventListener("click",()=>{
@@ -153,65 +131,48 @@ tabs.forEach(tab=>{
   });
 });
 
-showSignup.addEventListener("click",()=>{loginCard.classList.remove("active");signupCard.classList.add("active");});
-showLogin.addEventListener("click",()=>{signupCard.classList.remove("active");loginCard.classList.add("active");});
+showSignup.onclick=()=>{loginCard.classList.remove("active");signupCard.classList.add("active");}
+showLogin.onclick=()=>{signupCard.classList.remove("active");loginCard.classList.add("active");}
 
-loginForm.addEventListener("submit", async e => {
+loginForm.onsubmit=async e=>{
   e.preventDefault();
-  const username = document.getElementById("loginEmail").value.trim();
-  const password = document.getElementById("loginPassword").value.trim();
-  const res = await fetch(`${API_URL}/login`,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({username,password})
-  });
-  const data = await res.json();
-  if(data.userId){
-    localStorage.setItem("userId",data.userId);
-    showDashboard();
-  } else alert(data.error || "Login failed");
-});
+  const username=document.getElementById("loginEmail").value;
+  const password=document.getElementById("loginPassword").value;
+  const res=await fetch(`${API_URL}/login`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username,password})});
+  const data=await res.json();
+  if(data.userId){localStorage.setItem("userId",data.userId);showDashboard();}
+  else alert("Login failed");
+};
 
-signupForm.addEventListener("submit", async e => {
+signupForm.onsubmit=async e=>{
   e.preventDefault();
-  const username = document.getElementById("signupEmail").value.trim();
-  const password = document.getElementById("signupPassword").value.trim();
-  const res = await fetch(`${API_URL}/register`,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({username,password})
-  });
-  const data = await res.json();
-  if(data.message){alert("Signup success");signupCard.classList.remove("active");loginCard.classList.add("active");}
-  else alert(data.error || "Signup failed");
-});
+  const username=document.getElementById("signupEmail").value;
+  const password=document.getElementById("signupPassword").value;
+  const res=await fetch(`${API_URL}/register`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username,password})});
+  const data=await res.json();
+  if(data.message){alert("Signup success");showLogin.click();}
+  else alert("Signup failed");
+};
 
-logoutBtn.addEventListener("click",()=>{
-  localStorage.removeItem("userId");
-  dashboardCard.classList.remove("active");
-  loginCard.classList.add("active");
-});
-
-let caloriesChart,workoutsChart,mealsChart,hydrationChart;
-const overviewCards = document.getElementById("overviewCards");
+logoutBtn.onclick=()=>{localStorage.removeItem("userId");dashboardCard.classList.remove("active");loginCard.classList.add("active");}
 
 async function showDashboard(){
   loginCard.classList.remove("active");
   signupCard.classList.remove("active");
   dashboardCard.classList.add("active");
-  const userId = localStorage.getItem("userId");
+  const userId=localStorage.getItem("userId");
   document.getElementById("userInfo").innerText="User #"+userId;
-  const res = await fetch(`${API_URL}/dashboard/${userId}`);
-  const data = await res.json();
 
-  // Overview cards
-  overviewCards.innerHTML = "";
-  const cards = [
-    {title:"Habit Streak", value:`🔥 ${data.habits[0]?.streak || 0} days`},
-    {title:"Workouts", value:`${data.workouts.reduce((a,b)=>a+b,0)} sessions`},
-    {title:"Meals", value:`${data.meals.reduce((a,b)=>a+b,0)} meals`},
-    {title:"Calories", value:`${data.calories[data.calories.length-1]||0} kcal`},
-    {title:"Hydration", value:`${data.hydration[data.hydration.length-1]||0} glasses`}
+  const res=await fetch(`${API_URL}/dashboard/${userId}`);
+  const data=await res.json();
+
+  const overviewCards=document.getElementById("overviewCards");
+  overviewCards.innerHTML="";
+  const cards=[
+    {title:"Water", value:`${data.water} glasses`},
+    {title:"Sleep", value:`${data.sleep} hrs`},
+    {title:"Study", value:`${data.study} hrs`},
+    {title:"Meals", value:`${data.meals} times`}
   ];
   cards.forEach(c=>{
     const div=document.createElement("div");
@@ -220,135 +181,46 @@ async function showDashboard(){
     overviewCards.appendChild(div);
   });
 
-  // Charts
-  if(caloriesChart) caloriesChart.destroy();
-  if(workoutsChart) workoutsChart.destroy();
-  if(mealsChart) mealsChart.destroy();
-  if(hydrationChart) hydrationChart.destroy();
-
-  const labels = data.labels;
-  caloriesChart = new Chart(document.getElementById("caloriesChart"), { type:"line", data:{labels,datasets:[{label:"Calories",data:data.calories,borderColor:"#48cae4",fill:false}]}, options:{responsive:true} });
-  workoutsChart = new Chart(document.getElementById("workoutsChart"), { type:"bar", data:{labels,datasets:[{label:"Workouts",data:data.workouts,backgroundColor:"#0077b6"}]}, options:{responsive:true} });
-  mealsChart = new Chart(document.getElementById("mealsChart"), { type:"line", data:{labels,datasets:[{label:"Meals",data:data.meals,borderColor:"#90e0ef",fill:false}]}, options:{responsive:true} });
-  hydrationChart = new Chart(document.getElementById("hydrationChart"), { type:"bar", data:{labels,datasets:[{label:"Water",data:data.hydration,backgroundColor:"#023e8a"}]}, options:{responsive:true} });
-
-  // Habits table
-  const habitsTable = document.getElementById("habitsTable");
-  habitsTable.innerHTML = "<tr><th>Habit</th><th>Streak</th><th>Completed Today</th><th>Action</th></tr>";
-  data.habits.forEach(h=>{
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${h.habit_name}</td><td>${h.streak} days</td><td><input type="checkbox" class="checkbox" ${h.completed_today?"checked":""} onclick="toggleHabit(${h.id},this.checked)"></td><td><button onclick="deleteHabit(${h.id})">Delete</button></td>`;
-    habitsTable.appendChild(tr);
-  });
-
-  // Workouts table
-  const workoutsTable = document.getElementById("workoutsTable");
-  workoutsTable.innerHTML = "<tr><th>Date</th><th>Exercise</th><th>Sets</th><th>Reps</th><th>Duration</th></tr>";
-  data.workouts_history?.forEach(w=>{
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${w.day}</td><td>${w.exercise}</td><td>${w.sets}</td><td>${w.reps}</td><td>${w.duration}</td>`;
-    workoutsTable.appendChild(tr);
-  });
-
-  // Meals table
-  const mealsTable = document.getElementById("mealsTable");
-  mealsTable.innerHTML = "<tr><th>Date</th><th>Food</th><th>Quantity</th><th>Calories</th></tr>";
-  data.meals_history?.forEach(m=>{
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${m.day}</td><td>${m.food}</td><td>${m.quantity}</td><td>${m.calories}</td>`;
-    mealsTable.appendChild(tr);
-  });
-
-  // Sleep table
-  const sleepTable = document.getElementById("sleepTable");
-  sleepTable.innerHTML = "<tr><th>Date</th><th>Hours</th></tr>";
-  data.sleep.forEach(s=>{
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${s.date}</td><td>${s.hours}</td>`;
-    sleepTable.appendChild(tr);
-  });
+  let healthGood=(data.water>=8 && data.sleep>=7 && data.study>=4 && data.meals>=3);
+  document.getElementById("healthMessage").innerText=healthGood?"✅ Your health is good":"❌ Needs improvement";
 }
 
 if(localStorage.getItem("userId")) showDashboard();
 
-// Event handlers for adding
-document.getElementById("addHabitBtn").addEventListener("click", async()=>{
-  const habit_name=document.getElementById("habitInput").value.trim();
-  if(!habit_name) return;
-  const userId = localStorage.getItem("userId");
-  const res = await fetch(`${API_URL}/habits/${userId}/add`,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({habit_name})
-  });
-  const data = await res.json();
-  if(data.success){document.getElementById("habitInput").value=""; showDashboard();}
-  else alert(data.error);
-});
-
-document.getElementById("addWorkoutBtn").addEventListener("click", async()=>{
-  const exercise=document.getElementById("exerciseInput").value.trim();
-  const sets=parseInt(document.getElementById("setInput").value);
-  const reps=parseInt(document.getElementById("repsInput").value);
-  const duration=parseInt(document.getElementById("durationInput").value);
-  if(!exercise||!sets||!reps||!duration) return;
-  const userId=localStorage.getItem("userId");
-  await fetch(`${API_URL}/workouts/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({exercise,sets,reps,duration})});
-  document.getElementById("exerciseInput").value="";
-  document.getElementById("setInput").value="";
-  document.getElementById("repsInput").value="";
-  document.getElementById("durationInput").value="";
-  showDashboard();
-});
-
-document.getElementById("addMealBtn").addEventListener("click", async()=>{
-  const food=document.getElementById("foodInput").value.trim();
-  const quantity=parseInt(document.getElementById("quantityInput").value);
-  if(!food||!quantity) return;
-  const userId=localStorage.getItem("userId");
-  await fetch(`${API_URL}/meals/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({food,quantity})});
-  document.getElementById("foodInput").value="";
-  document.getElementById("quantityInput").value="";
-  showDashboard();
-});
-
-document.getElementById("addSleepBtn").addEventListener("click", async()=>{
+// --- actions ---
+document.getElementById("addSleepBtn").onclick=async()=>{
   const date=document.getElementById("sleepDate").value;
-  const hours=parseFloat(document.getElementById("sleepHours").value);
+  const hours=document.getElementById("sleepHours").value;
   if(!date||!hours) return;
   const userId=localStorage.getItem("userId");
   await fetch(`${API_URL}/sleep/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({date,hours})});
-  document.getElementById("sleepDate").value="";
-  document.getElementById("sleepHours").value="";
   showDashboard();
-});
+};
 
-document.getElementById("addGlassBtn").addEventListener("click", async()=>{
-  const glasses=parseInt(document.getElementById("hydrationInput").value);
-  if(!glasses || glasses<1) return;
+document.getElementById("addStudyBtn").onclick=async()=>{
+  const date=document.getElementById("studyDate").value;
+  const hours=document.getElementById("studyHours").value;
+  if(!date||!hours) return;
+  const userId=localStorage.getItem("userId");
+  await fetch(`${API_URL}/study/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({date,hours})});
+  showDashboard();
+};
+
+document.getElementById("addMealBtn").onclick=async()=>{
+  const food=document.getElementById("foodInput").value;
+  if(!food) return;
+  const userId=localStorage.getItem("userId");
+  await fetch(`${API_URL}/meals/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({food,quantity:1})});
+  showDashboard();
+};
+
+document.getElementById("addGlassBtn").onclick=async()=>{
+  const glasses=document.getElementById("hydrationInput").value;
+  if(!glasses) return;
   const userId=localStorage.getItem("userId");
   await fetch(`${API_URL}/hydration/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({glasses})});
-  document.getElementById("hydrationInput").value="";
   showDashboard();
-});
-
-document.getElementById("resetGlassBtn").addEventListener("click", async()=>{
-  const userId=localStorage.getItem("userId");
-  await fetch(`${API_URL}/hydration/${userId}/reset`,{method:"POST"});
-  showDashboard();
-});
-
-// Habit actions
-async function deleteHabit(id){
-  const userId = localStorage.getItem("userId");
-  await fetch(`${API_URL}/habits/${userId}/delete/${id}`,{method:"POST"});
-  showDashboard();
-}
-async function toggleHabit(id,completed){
-  const userId = localStorage.getItem("userId");
-  await fetch(`${API_URL}/habits/${userId}/toggle/${id}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({completed})});
-  showDashboard();
-}
+};
 </script>
 </body>
 </html>
