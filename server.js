@@ -152,15 +152,19 @@ app.post("/meals/:userId/add", (req,res)=>{
 // --- HYDRATION ---
 app.post("/hydration/:userId/add", (req,res)=>{
   const {userId} = req.params;
-  const {day,glasses} = req.body;
-  if(glasses===-Infinity){ // reset today
-    db.run(`DELETE FROM hydration WHERE user_id=? AND day=?`, [userId,day], ()=>res.json({success:true}));
-    return;
-  }
+  const {glasses} = req.body;
+  const day = new Date().toISOString().split('T')[0]; // today
   db.get(`SELECT * FROM hydration WHERE user_id=? AND day=?`, [userId,day], (err,row)=>{
     if(row) db.run(`UPDATE hydration SET glasses=glasses+? WHERE id=?`, [glasses,row.id], ()=>res.json({success:true}));
     else db.run(`INSERT INTO hydration(user_id,day,glasses) VALUES(?,?,?)`, [userId,day,glasses], ()=>res.json({success:true}));
   });
+});
+
+// --- HYDRATION RESET ---
+app.post("/hydration/:userId/reset", (req,res)=>{
+  const {userId} = req.params;
+  const day = new Date().toISOString().split('T')[0]; // today
+  db.run(`DELETE FROM hydration WHERE user_id=? AND day=?`, [userId,day], ()=>res.json({success:true}));
 });
 
 // --- CALORIES ---
