@@ -16,7 +16,6 @@ button:hover{background:#0077b6;}
 .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;}
 .nav span{cursor:pointer;padding:8px 12px;background:rgba(255,255,255,0.12);margin-right:5px;border-radius:8px;transition:0.3s;}
 .nav span:hover{background:rgba(255,255,255,0.2);}
-.nav span.active{background:rgba(255,255,255,0.3);}
 .flex-row{display:flex;gap:15px;align-items:center;flex-wrap:wrap;justify-content:center;}
 .overview-card{flex:1 1 120px;background:rgba(255,255,255,0.15);padding:15px;border-radius:15px;text-align:center;}
 label{display:block;margin-top:10px;}
@@ -111,7 +110,6 @@ th,td{border:1px solid #fff;padding:8px;text-align:center;}
 <h3>Meals</h3>
 <label>Food</label><input type="text" id="foodInput" placeholder="Food">
 <label>Quantity</label><input type="number" id="quantityInput" placeholder="Qty">
-<label>Calories</label><input type="number" id="caloriesInput" placeholder="Calories">
 <button id="addMealBtn">Add Meal</button>
 <h4>Meals Today</h4>
 <table id="mealsTable"></table>
@@ -133,8 +131,7 @@ th,td{border:1px solid #fff;padding:8px;text-align:center;}
 </div>
 
 <script>
-const API_URL = ""; // empty means same domain, works on Render and local
-
+const API_URL="https://health-tracker-express.onrender.com";
 const loginCard=document.getElementById("loginCard");
 const signupCard=document.getElementById("signupCard");
 const dashboardCard=document.getElementById("dashboardCard");
@@ -163,11 +160,7 @@ loginForm.addEventListener("submit",async e=>{
   localStorage.clear();
   const username=document.getElementById("loginEmail").value.trim();
   const password=document.getElementById("loginPassword").value.trim();
-  const res=await fetch(`${API_URL}/login`,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({username,password})
-  });
+  const res=await fetch(`${API_URL}/login`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username,password})});
   const data=await res.json();
   if(data.userId){localStorage.setItem("userId",data.userId);showDashboard();}
   else alert(data.error||"Login failed");
@@ -177,11 +170,7 @@ signupForm.addEventListener("submit",async e=>{
   e.preventDefault();
   const username=document.getElementById("signupEmail").value.trim();
   const password=document.getElementById("signupPassword").value.trim();
-  const res=await fetch(`${API_URL}/register`,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({username,password})
-  });
+  const res=await fetch(`${API_URL}/register`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username,password})});
   const data=await res.json();
   if(data.message){alert("Signup success");signupCard.classList.remove("active");loginCard.classList.add("active");}
   else alert(data.error||"Signup failed");
@@ -193,23 +182,21 @@ let caloriesChart,workoutsChart,mealsChart,hydrationChart;
 const overviewCards=document.getElementById("overviewCards");
 
 async function showDashboard(){
-  const userId=localStorage.getItem("userId");
-  if(!userId) return;
   loginCard.classList.remove("active");
   signupCard.classList.remove("active");
   dashboardCard.classList.add("active");
+  const userId=localStorage.getItem("userId");
   document.getElementById("userInfo").innerText="User #"+userId;
-
   const res=await fetch(`${API_URL}/dashboard/${userId}`);
   const data=await res.json();
 
   overviewCards.innerHTML="";
   const cards = [
-    {title:"Habit Streak",value:`🔥 ${data.habits.reduce((a,h)=>a+h.streak,0)} days`},
-    {title:"Workouts",value:`${data.workouts_history.length} sessions`},
-    {title:"Meals",value:`${data.meals_history.length} meals`},
+    {title:"Habit Streak",value:`🔥 ${data.habits[0]?.streak||0} days`},
+    {title:"Workouts",value:`${data.workouts.reduce((a,b)=>a+b,0)} sessions`},
+    {title:"Meals",value:`${data.meals.reduce((a,b)=>a+b,0)} meals`},
     {title:"Calories",value:`${data.calories[data.calories.length-1]||0} kcal`},
-    {title:"Hydration",value:`${data.hydration[data.hydration.length-1]?.glasses||0} glasses`}
+    {title:"Hydration",value:`${data.hydration[data.hydration.length-1]||0} glasses`}
   ];
   cards.forEach(c=>{
     const div=document.createElement("div");
@@ -227,18 +214,16 @@ async function showDashboard(){
   caloriesChart=new Chart(document.getElementById("caloriesChart"),{type:"line",data:{labels,datasets:[{label:"Calories",data:data.calories,borderColor:"#48cae4",fill:false}]},options:{responsive:true}});
   workoutsChart=new Chart(document.getElementById("workoutsChart"),{type:"bar",data:{labels,datasets:[{label:"Workouts",data:data.workouts,backgroundColor:"#0077b6"}]},options:{responsive:true}});
   mealsChart=new Chart(document.getElementById("mealsChart"),{type:"line",data:{labels,datasets:[{label:"Meals",data:data.meals,borderColor:"#90e0ef",fill:false}]},options:{responsive:true}});
-  hydrationChart=new Chart(document.getElementById("hydrationChart"),{type:"bar",data:{labels,datasets:[{label:"Water",data:data.hydration.map(h=>h.glasses),backgroundColor:"#023e8a"}]},options:{responsive:true}});
+  hydrationChart=new Chart(document.getElementById("hydrationChart"),{type:"bar",data:{labels,datasets:[{label:"Water",data:data.hydration,backgroundColor:"#023e8a"}]},options:{responsive:true}});
 
-  // Habits table
   const habitsTable=document.getElementById("habitsTable");
   habitsTable.innerHTML="<tr><th>Habit</th><th>Streak</th><th>Completed Today</th><th>Action</th></tr>";
   data.habits.forEach(h=>{
     const tr=document.createElement("tr");
-    tr.innerHTML=`<td>${h.habit_name}</td><td>${h.streak} days</td><td><input type="checkbox" class="checkbox" ${h.completed_today?"checked":""} onclick="toggleHabit('${h.id}',this.checked)"></td><td><button onclick="deleteHabit('${h.id}')">Delete</button></td>`;
+    tr.innerHTML=`<td>${h.habit_name}</td><td>${h.streak} days</td><td><input type="checkbox" class="checkbox" ${h.completed_today?"checked":""} onclick="toggleHabit(${h.id},this.checked)"></td><td><button onclick="deleteHabit(${h.id})">Delete</button></td>`;
     habitsTable.appendChild(tr);
   });
 
-  // Workouts table
   const workoutsTable=document.getElementById("workoutsTable");
   workoutsTable.innerHTML="<tr><th>Date</th><th>Exercise</th><th>Sets</th><th>Reps</th><th>Duration</th></tr>";
   data.workouts_history?.forEach(w=>{
@@ -247,7 +232,6 @@ async function showDashboard(){
     workoutsTable.appendChild(tr);
   });
 
-  // Meals table
   const mealsTable=document.getElementById("mealsTable");
   mealsTable.innerHTML="<tr><th>Date</th><th>Food</th><th>Quantity</th><th>Calories</th></tr>";
   data.meals_history?.forEach(m=>{
@@ -256,41 +240,23 @@ async function showDashboard(){
     mealsTable.appendChild(tr);
   });
 
-  // Sleep table
   const sleepTable=document.getElementById("sleepTable");
   sleepTable.innerHTML="<tr><th>Date</th><th>Hours</th></tr>";
-  data.sleep.forEach(s=>{
-    const tr=document.createElement("tr");
-    tr.innerHTML=`<td>${s.date}</td><td>${s.hours}</td>`;
-    sleepTable.appendChild(tr);
-  });
+  data.sleep.forEach(s=>{const tr=document.createElement("tr");tr.innerHTML=`<td>${s.date}</td><td>${s.hours}</td>`;sleepTable.appendChild(tr);});
 }
 
 if(localStorage.getItem("userId")) showDashboard();
 
-// Habits actions
 document.getElementById("addHabitBtn").addEventListener("click",async()=>{
   const habit_name=document.getElementById("habitInput").value.trim();
   if(!habit_name) return;
   const userId=localStorage.getItem("userId");
-  await fetch(`${API_URL}/habits/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({habit_name})});
-  document.getElementById("habitInput").value="";
-  showDashboard();
+  const res=await fetch(`${API_URL}/habits/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({habit_name})});
+  const data=await res.json();
+  if(data.success){document.getElementById("habitInput").value="";showDashboard();}
+  else alert(data.error);
 });
 
-async function deleteHabit(id){
-  const userId=localStorage.getItem("userId");
-  await fetch(`${API_URL}/habits/${userId}/delete/${id}`,{method:"POST"});
-  showDashboard();
-}
-
-async function toggleHabit(id,completed){
-  const userId=localStorage.getItem("userId");
-  await fetch(`${API_URL}/habits/${userId}/toggle/${id}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({completed})});
-  showDashboard();
-}
-
-// Workouts
 document.getElementById("addWorkoutBtn").addEventListener("click",async()=>{
   const exercise=document.getElementById("exerciseInput").value.trim();
   const sets=parseInt(document.getElementById("setInput").value);
@@ -306,21 +272,17 @@ document.getElementById("addWorkoutBtn").addEventListener("click",async()=>{
   showDashboard();
 });
 
-// Meals
 document.getElementById("addMealBtn").addEventListener("click",async()=>{
   const food=document.getElementById("foodInput").value.trim();
   const quantity=parseInt(document.getElementById("quantityInput").value);
-  const calories=parseInt(document.getElementById("caloriesInput").value);
-  if(!food||!quantity||!calories) return;
+  if(!food||!quantity) return;
   const userId=localStorage.getItem("userId");
-  await fetch(`${API_URL}/meals/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({food,quantity,calories})});
+  await fetch(`${API_URL}/meals/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({food,quantity})});
   document.getElementById("foodInput").value="";
   document.getElementById("quantityInput").value="";
-  document.getElementById("caloriesInput").value="";
   showDashboard();
 });
 
-// Sleep
 document.getElementById("addSleepBtn").addEventListener("click",async()=>{
   const date=document.getElementById("sleepDate").value;
   const hours=parseFloat(document.getElementById("sleepHours").value);
@@ -332,7 +294,6 @@ document.getElementById("addSleepBtn").addEventListener("click",async()=>{
   showDashboard();
 });
 
-// Hydration
 document.getElementById("addGlassBtn").addEventListener("click",async()=>{
   const glasses=parseInt(document.getElementById("hydrationInput").value);
   if(!glasses || glasses<1) return;
@@ -347,6 +308,18 @@ document.getElementById("resetGlassBtn").addEventListener("click",async()=>{
   await fetch(`${API_URL}/hydration/${userId}/reset`,{method:"POST"});
   showDashboard();
 });
+
+async function deleteHabit(id){
+  const userId=localStorage.getItem("userId");
+  await fetch(`${API_URL}/habits/${userId}/delete/${id}`,{method:"POST"});
+  showDashboard();
+}
+
+async function toggleHabit(id,completed){
+  const userId=localStorage.getItem("userId");
+  await fetch(`${API_URL}/habits/${userId}/toggle/${id}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({completed})});
+  showDashboard();
+}
 </script>
 </body>
 </html>
