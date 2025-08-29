@@ -15,10 +15,10 @@ button{background:#023e8a;color:#fff;font-weight:bold;cursor:pointer;}
 button:hover{background:#0077b6;}
 .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
 .nav span{cursor:pointer;padding:5px 10px;background:rgba(255,255,255,0.12);margin-right:5px;border-radius:6px;}
-table{width:100%;border-collapse:collapse;margin-top:10px;}
-th,td{border:1px solid #fff;padding:5px;text-align:center;}
 label{display:block;margin-top:10px;}
 .flex-row{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;}
+table{width:100%;border-collapse:collapse;margin-top:10px;}
+th,td{border:1px solid #fff;padding:5px;text-align:center;}
 </style>
 </head>
 <body>
@@ -68,9 +68,9 @@ label{display:block;margin-top:10px;}
 <h3>Today's Overview</h3>
 <div id="overviewCards" class="flex-row"></div>
 
-<!-- Hydration input -->
 <div class="flex-row">
-<input type="number" id="hydrationInput" placeholder="Add glasses" min="1" style="width:100px;">
+<label>Add Glasses</label>
+<input type="number" id="hydrationInput" placeholder="Glasses" min="1" style="width:100px;">
 <button id="addGlassBtn">Add</button>
 <button id="resetGlassBtn">Reset Today</button>
 </div>
@@ -84,18 +84,18 @@ label{display:block;margin-top:10px;}
 <!-- HABITS -->
 <div id="habitsTab" class="tabContent" style="display:none;">
 <h3>Habits</h3>
-<label>Add Habit</label>
-<input type="text" id="habitInput" placeholder="Habit name">
+<label>Habit Name</label>
+<input type="text" id="habitInput" placeholder="Habit">
 <button id="addHabitBtn">Add Habit</button>
-<p id="habitTip">Tip: Consistency is key!</p>
 <table id="habitsTable"></table>
 </div>
 
 <!-- WORKOUTS -->
 <div id="workoutsTab" class="tabContent" style="display:none;">
 <h3>Workouts</h3>
-<label>Add Workout</label>
-<input type="text" id="workoutDay" placeholder="Day e.g. Mon">
+<label>Day (Mon-Sun)</label>
+<input type="text" id="workoutDay" placeholder="Day">
+<label>Sessions</label>
 <input type="number" id="workoutSessions" placeholder="Sessions">
 <button id="addWorkoutBtn">Add Workout</button>
 <table id="workoutsTable"></table>
@@ -104,9 +104,10 @@ label{display:block;margin-top:10px;}
 <!-- MEALS -->
 <div id="mealsTab" class="tabContent" style="display:none;">
 <h3>Meals</h3>
-<label>Add Meal</label>
-<input type="text" id="mealDay" placeholder="Day e.g. Mon">
-<input type="number" id="mealCount" placeholder="Meals count">
+<label>Day (Mon-Sun)</label>
+<input type="text" id="mealDay" placeholder="Day">
+<label>Meals Count</label>
+<input type="number" id="mealCount" placeholder="Meals">
 <button id="addMealBtn">Add Meal</button>
 <table id="mealsTable"></table>
 </div>
@@ -114,8 +115,9 @@ label{display:block;margin-top:10px;}
 <!-- SLEEP -->
 <div id="sleepTab" class="tabContent" style="display:none;">
 <h3>Sleep</h3>
-<label>Add Sleep Hours</label>
+<label>Date</label>
 <input type="date" id="sleepDate">
+<label>Hours</label>
 <input type="number" id="sleepHours" placeholder="Hours">
 <button id="addSleepBtn">Save</button>
 <table id="sleepTable"></table>
@@ -138,6 +140,7 @@ const logoutBtn=document.getElementById("logoutBtn");
 const tabs=document.querySelectorAll(".tab");
 const tabContents=document.querySelectorAll(".tabContent");
 
+// Tab switch
 tabs.forEach(tab=>{
 tab.addEventListener("click",()=>{
 tabContents.forEach(tc=>tc.style.display="none");
@@ -145,11 +148,14 @@ document.getElementById(tab.dataset.tab+"Tab").style.display="block";
 });
 });
 
+// Show signup/login
 showSignup.addEventListener("click",()=>{loginCard.classList.remove("active");signupCard.classList.add("active");});
 showLogin.addEventListener("click",()=>{signupCard.classList.remove("active");loginCard.classList.add("active");});
 
+// Login
 loginForm.addEventListener("submit",async e=>{
 e.preventDefault();
+localStorage.clear(); // clear old data on login
 const username=document.getElementById("loginEmail").value.trim();
 const password=document.getElementById("loginPassword").value.trim();
 const res=await fetch(`${API_URL}/login`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username,password})});
@@ -158,6 +164,7 @@ if(data.userId){localStorage.setItem("userId",data.userId);showDashboard();}
 else alert(data.error||"Login failed");
 });
 
+// Signup
 signupForm.addEventListener("submit",async e=>{
 e.preventDefault();
 const username=document.getElementById("signupEmail").value.trim();
@@ -168,12 +175,13 @@ if(data.message){alert("Signup success");signupCard.classList.remove("active");l
 else alert(data.error||"Signup failed");
 });
 
+// Logout
 logoutBtn.addEventListener("click",()=>{localStorage.removeItem("userId");dashboardCard.classList.remove("active");loginCard.classList.add("active");});
 
 let caloriesChart,workoutsChart,mealsChart,hydrationChart;
 const overviewCards=document.getElementById("overviewCards");
 
-// --- DASHBOARD ---
+// Show dashboard
 async function showDashboard(){
 loginCard.classList.remove("active");signupCard.classList.remove("active");dashboardCard.classList.add("active");
 const userId=localStorage.getItem("userId");
@@ -201,22 +209,19 @@ workoutsChart=new Chart(document.getElementById("workoutsChart"),{type:"bar",dat
 mealsChart=new Chart(document.getElementById("mealsChart"),{type:"line",data:{labels,datasets:[{label:"Meals",data:data.meals,borderColor:"#90e0ef",fill:false}]},options:{responsive:true}});
 hydrationChart=new Chart(document.getElementById("hydrationChart"),{type:"bar",data:{labels,datasets:[{label:"Water",data:data.hydration,backgroundColor:"#023e8a"}]},options:{responsive:true}});
 
-// Habits table
+// Tables
 const habitsTable=document.getElementById("habitsTable");
 habitsTable.innerHTML="<tr><th>Habit</th><th>Streak</th></tr>";
 data.habits.forEach(h=>{const tr=document.createElement("tr");tr.innerHTML=`<td>${h.habit_name}</td><td>${h.streak} days</td>`;habitsTable.appendChild(tr);});
 
-// Workouts table
 const workoutsTable=document.getElementById("workoutsTable");
 workoutsTable.innerHTML="<tr><th>Day</th><th>Sessions</th></tr>";
 data.labels.forEach((day,idx)=>{const tr=document.createElement("tr");tr.innerHTML=`<td>${day}</td><td>${data.workouts[idx]}</td>`;workoutsTable.appendChild(tr);});
 
-// Meals table
 const mealsTable=document.getElementById("mealsTable");
 mealsTable.innerHTML="<tr><th>Day</th><th>Meals</th></tr>";
 data.labels.forEach((day,idx)=>{const tr=document.createElement("tr");tr.innerHTML=`<td>${day}</td><td>${data.meals[idx]}</td>`;mealsTable.appendChild(tr);});
 
-// Sleep table
 const sleepTable=document.getElementById("sleepTable");
 sleepTable.innerHTML="<tr><th>Date</th><th>Hours</th></tr>";
 data.sleep.forEach(s=>{const tr=document.createElement("tr");tr.innerHTML=`<td>${s.date}</td><td>${s.hours}</td>`;sleepTable.appendChild(tr);});
