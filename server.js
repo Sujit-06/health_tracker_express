@@ -109,7 +109,7 @@ app.post("/meals/:userId/add",(req,res)=>{
   const {userId}=req.params;
   const {food,quantity}=req.body;
   const day=new Date().toISOString().split('T')[0];
-  const calories=Math.round(quantity*50); // example: 50 kcal per unit
+  const calories=Math.round(quantity*50);
   db.run(`INSERT INTO meals(user_id,day,food,quantity,calories) VALUES(?,?,?,?,?)`, [userId,day,food,quantity,calories], ()=>res.json({success:true}));
 });
 
