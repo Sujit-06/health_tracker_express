@@ -16,6 +16,7 @@ button:hover{background:#0077b6;}
 .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;}
 .nav span{cursor:pointer;padding:8px 12px;background:rgba(255,255,255,0.12);margin-right:5px;border-radius:8px;transition:0.3s;}
 .nav span:hover{background:rgba(255,255,255,0.2);}
+.nav span.active{background:rgba(255,255,255,0.3);}
 .flex-row{display:flex;gap:15px;align-items:center;flex-wrap:wrap;justify-content:center;}
 .overview-card{flex:1 1 120px;background:rgba(255,255,255,0.15);padding:15px;border-radius:15px;text-align:center;}
 label{display:block;margin-top:10px;}
@@ -110,6 +111,7 @@ th,td{border:1px solid #fff;padding:8px;text-align:center;}
 <h3>Meals</h3>
 <label>Food</label><input type="text" id="foodInput" placeholder="Food">
 <label>Quantity</label><input type="number" id="quantityInput" placeholder="Qty">
+<label>Calories</label><input type="number" id="caloriesInput" placeholder="Calories">
 <button id="addMealBtn">Add Meal</button>
 <h4>Meals Today</h4>
 <table id="mealsTable"></table>
@@ -182,19 +184,21 @@ let caloriesChart,workoutsChart,mealsChart,hydrationChart;
 const overviewCards=document.getElementById("overviewCards");
 
 async function showDashboard(){
+  const userId=localStorage.getItem("userId");
+  if(!userId) return;
   loginCard.classList.remove("active");
   signupCard.classList.remove("active");
   dashboardCard.classList.add("active");
-  const userId=localStorage.getItem("userId");
   document.getElementById("userInfo").innerText="User #"+userId;
+
   const res=await fetch(`${API_URL}/dashboard/${userId}`);
   const data=await res.json();
 
   overviewCards.innerHTML="";
   const cards = [
-    {title:"Habit Streak",value:`🔥 ${data.habits[0]?.streak||0} days`},
-    {title:"Workouts",value:`${data.workouts.reduce((a,b)=>a+b,0)} sessions`},
-    {title:"Meals",value:`${data.meals.reduce((a,b)=>a+b,0)} meals`},
+    {title:"Habit Streak",value:`🔥 ${data.habits.reduce((a,h)=>a+h.streak,0)} days`},
+    {title:"Workouts",value:`${data.workouts_history.length} sessions`},
+    {title:"Meals",value:`${data.meals_history.length} meals`},
     {title:"Calories",value:`${data.calories[data.calories.length-1]||0} kcal`},
     {title:"Hydration",value:`${data.hydration[data.hydration.length-1]||0} glasses`}
   ];
@@ -247,16 +251,29 @@ async function showDashboard(){
 
 if(localStorage.getItem("userId")) showDashboard();
 
+// HABITS
 document.getElementById("addHabitBtn").addEventListener("click",async()=>{
   const habit_name=document.getElementById("habitInput").value.trim();
   if(!habit_name) return;
   const userId=localStorage.getItem("userId");
-  const res=await fetch(`${API_URL}/habits/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({habit_name})});
-  const data=await res.json();
-  if(data.success){document.getElementById("habitInput").value="";showDashboard();}
-  else alert(data.error);
+  await fetch(`${API_URL}/habits/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({habit_name})});
+  document.getElementById("habitInput").value="";
+  showDashboard();
 });
 
+async function deleteHabit(id){
+  const userId=localStorage.getItem("userId");
+  await fetch(`${API_URL}/habits/${userId}/delete/${id}`,{method:"POST"});
+  showDashboard();
+}
+
+async function toggleHabit(id,completed){
+  const userId=localStorage.getItem("userId");
+  await fetch(`${API_URL}/habits/${userId}/toggle/${id}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({completed})});
+  showDashboard();
+}
+
+// WORKOUTS
 document.getElementById("addWorkoutBtn").addEventListener("click",async()=>{
   const exercise=document.getElementById("exerciseInput").value.trim();
   const sets=parseInt(document.getElementById("setInput").value);
@@ -272,17 +289,21 @@ document.getElementById("addWorkoutBtn").addEventListener("click",async()=>{
   showDashboard();
 });
 
+// MEALS
 document.getElementById("addMealBtn").addEventListener("click",async()=>{
   const food=document.getElementById("foodInput").value.trim();
   const quantity=parseInt(document.getElementById("quantityInput").value);
-  if(!food||!quantity) return;
+  const calories=parseInt(document.getElementById("caloriesInput").value);
+  if(!food||!quantity||!calories) return;
   const userId=localStorage.getItem("userId");
-  await fetch(`${API_URL}/meals/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({food,quantity})});
+  await fetch(`${API_URL}/meals/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({food,quantity,calories})});
   document.getElementById("foodInput").value="";
   document.getElementById("quantityInput").value="";
+  document.getElementById("caloriesInput").value="";
   showDashboard();
 });
 
+// SLEEP
 document.getElementById("addSleepBtn").addEventListener("click",async()=>{
   const date=document.getElementById("sleepDate").value;
   const hours=parseFloat(document.getElementById("sleepHours").value);
@@ -294,6 +315,7 @@ document.getElementById("addSleepBtn").addEventListener("click",async()=>{
   showDashboard();
 });
 
+// HYDRATION
 document.getElementById("addGlassBtn").addEventListener("click",async()=>{
   const glasses=parseInt(document.getElementById("hydrationInput").value);
   if(!glasses || glasses<1) return;
@@ -308,18 +330,6 @@ document.getElementById("resetGlassBtn").addEventListener("click",async()=>{
   await fetch(`${API_URL}/hydration/${userId}/reset`,{method:"POST"});
   showDashboard();
 });
-
-async function deleteHabit(id){
-  const userId=localStorage.getItem("userId");
-  await fetch(`${API_URL}/habits/${userId}/delete/${id}`,{method:"POST"});
-  showDashboard();
-}
-
-async function toggleHabit(id,completed){
-  const userId=localStorage.getItem("userId");
-  await fetch(`${API_URL}/habits/${userId}/toggle/${id}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({completed})});
-  showDashboard();
-}
 </script>
 </body>
 </html>
