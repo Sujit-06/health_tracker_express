@@ -20,9 +20,9 @@ const db = new sqlite3.Database("./health_tracker.db",(err)=>{
 // Create tables
 db.serialize(()=>{
   db.run(`CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT)`);
-  db.run(`CREATE TABLE IF NOT EXISTS habits (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, habit_name TEXT, streak INTEGER DEFAULT 0, FOREIGN KEY(user_id) REFERENCES users(id))`);
-  db.run(`CREATE TABLE IF NOT EXISTS workouts (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, day TEXT, sessions INTEGER, FOREIGN KEY(user_id) REFERENCES users(id))`);
-  db.run(`CREATE TABLE IF NOT EXISTS meals (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, day TEXT, meals INTEGER, FOREIGN KEY(user_id) REFERENCES users(id))`);
+  db.run(`CREATE TABLE IF NOT EXISTS habits (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, habit_name TEXT, streak INTEGER DEFAULT 0, completed_today INTEGER DEFAULT 0, FOREIGN KEY(user_id) REFERENCES users(id))`);
+  db.run(`CREATE TABLE IF NOT EXISTS workouts (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, day TEXT, exercise TEXT, sets INTEGER, reps INTEGER, duration INTEGER, FOREIGN KEY(user_id) REFERENCES users(id))`);
+  db.run(`CREATE TABLE IF NOT EXISTS meals (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, day TEXT, food TEXT, quantity INTEGER, calories INTEGER, FOREIGN KEY(user_id) REFERENCES users(id))`);
   db.run(`CREATE TABLE IF NOT EXISTS hydration (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, day TEXT, glasses INTEGER, FOREIGN KEY(user_id) REFERENCES users(id))`);
   db.run(`CREATE TABLE IF NOT EXISTS calories (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, day TEXT, calories INTEGER, FOREIGN KEY(user_id) REFERENCES users(id))`);
   db.run(`CREATE TABLE IF NOT EXISTS sleep (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, date TEXT, hours REAL, FOREIGN KEY(user_id) REFERENCES users(id))`);
@@ -50,14 +50,16 @@ app.post("/login",(req,res)=>{
 app.get("/dashboard/:userId",(req,res)=>{
   const userId=req.params.userId;
   const labels=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-  let data={labels, habits:[], workouts:[], meals:[], hydration:[], calories:[], sleep:[]};
+  let data={labels, habits:[], workouts:[], meals:[], hydration:[], calories:[], sleep:[], workouts_history:[], meals_history:[]};
 
   db.all(`SELECT * FROM habits WHERE user_id=?`, [userId], (err,rows)=>{
-    data.habits=rows;
+    data.habits=rows.map(r=>({...r, completed_today: r.completed_today}));
     db.all(`SELECT * FROM workouts WHERE user_id=?`, [userId], (err,rows)=>{
-      data.workouts=labels.map(d=>rows.find(r=>r.day===d)?.sessions||0);
+      data.workouts=labels.map(d=>rows.filter(r=>r.day===d).length);
+      data.workouts_history=rows;
       db.all(`SELECT * FROM meals WHERE user_id=?`, [userId], (err,rows)=>{
-        data.meals=labels.map(d=>rows.find(r=>r.day===d)?.meals||0);
+        data.meals=labels.map(d=>rows.filter(r=>r.day===d).length);
+        data.meals_history=rows;
         db.all(`SELECT * FROM hydration WHERE user_id=?`, [userId], (err,rows)=>{
           data.hydration=labels.map(d=>rows.find(r=>r.day===d)?.glasses||0);
           db.all(`SELECT * FROM calories WHERE user_id=?`, [userId], (err,rows)=>{
@@ -79,28 +81,36 @@ app.post("/habits/:userId/add",(req,res)=>{
   const {habit_name}=req.body;
   db.get(`SELECT * FROM habits WHERE user_id=? AND habit_name=?`, [userId,habit_name], (err,row)=>{
     if(row) return res.json({error:"Habit exists"});
-    db.run(`INSERT INTO habits(user_id,habit_name,streak) VALUES(?,?,0)`, [userId,habit_name], ()=>res.json({success:true}));
+    db.run(`INSERT INTO habits(user_id,habit_name,streak,completed_today) VALUES(?,?,0,0)`, [userId,habit_name], ()=>res.json({success:true}));
   });
+});
+
+app.post("/habits/:userId/delete/:id",(req,res)=>{
+  const {userId,id}=req.params;
+  db.run(`DELETE FROM habits WHERE user_id=? AND id=?`, [userId,id], ()=>res.json({success:true}));
+});
+
+app.post("/habits/:userId/toggle/:id",(req,res)=>{
+  const {userId,id}=req.params;
+  const {completed}=req.body;
+  db.run(`UPDATE habits SET completed_today=? WHERE user_id=? AND id=?`, [completed?1:0,userId,id], ()=>res.json({success:true}));
 });
 
 // --- WORKOUTS ---
 app.post("/workouts/:userId/add",(req,res)=>{
   const {userId}=req.params;
-  const {day,sessions}=req.body;
-  db.get(`SELECT * FROM workouts WHERE user_id=? AND day=?`, [userId,day], (err,row)=>{
-    if(row) db.run(`UPDATE workouts SET sessions=sessions+? WHERE id=?`, [sessions,row.id], ()=>res.json({success:true}));
-    else db.run(`INSERT INTO workouts(user_id,day,sessions) VALUES(?,?,?)`, [userId,day,sessions], ()=>res.json({success:true}));
-  });
+  const {exercise,sets,reps,duration}=req.body;
+  const day=new Date().toISOString().split('T')[0];
+  db.run(`INSERT INTO workouts(user_id,day,exercise,sets,reps,duration) VALUES(?,?,?,?,?,?)`, [userId,day,exercise,sets,reps,duration], ()=>res.json({success:true}));
 });
 
 // --- MEALS ---
 app.post("/meals/:userId/add",(req,res)=>{
   const {userId}=req.params;
-  const {day,meals}=req.body;
-  db.get(`SELECT * FROM meals WHERE user_id=? AND day=?`, [userId,day], (err,row)=>{
-    if(row) db.run(`UPDATE meals SET meals=meals+? WHERE id=?`, [meals,row.id], ()=>res.json({success:true}));
-    else db.run(`INSERT INTO meals(user_id,day,meals) VALUES(?,?,?)`, [userId,day,meals], ()=>res.json({success:true}));
-  });
+  const {food,quantity}=req.body;
+  const day=new Date().toISOString().split('T')[0];
+  const calories=Math.round(quantity*50); // example: 50 kcal per unit
+  db.run(`INSERT INTO meals(user_id,day,food,quantity,calories) VALUES(?,?,?,?,?)`, [userId,day,food,quantity,calories], ()=>res.json({success:true}));
 });
 
 // --- HYDRATION ---
