@@ -2,33 +2,33 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Health Tracker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Health Tracker Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-html,body{margin:0;padding:0;font-family:'Segoe UI',Arial,sans-serif;background:linear-gradient(120deg,#a2d4f6 60%,#023e8a 100%);height:100%;color:#fff;display:flex;justify-content:center;align-items:flex-start;}
-.container{width:95%;max-width:1000px;margin-top:30px;}
-.card{background:rgba(255,255,255,0.14);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);padding:20px;border-radius:22px;text-align:center;display:none;transition:0.3s;}
-.card.active{display:block;}
-input,button{padding:10px;margin:5px;border-radius:7px;border:none;font-size:14px;}
-button{background:#023e8a;color:#fff;font-weight:bold;cursor:pointer;transition:0.3s;}
-button:hover{background:#0077b6;}
-.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;}
-.nav span{cursor:pointer;padding:5px 12px;background:rgba(255,255,255,0.12);margin-right:5px;border-radius:6px;transition:0.3s;}
-.nav span:hover{background:rgba(255,255,255,0.25);}
-label{display:block;margin-top:10px;font-weight:bold;}
-.flex-row{display:flex;gap:15px;align-items:center;justify-content:center;flex-wrap:wrap;}
-table{width:100%;border-collapse:collapse;margin-top:10px;}
-th,td{border:1px solid #fff;padding:8px;text-align:center;}
-.checkbox{cursor:pointer;}
-canvas{margin-top:20px;background:rgba(255,255,255,0.12);border-radius:12px;padding:10px;}
-h2,h3,h4{margin:10px 0;}
+  html, body {margin:0;padding:0;font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#a2d4f6,#023e8a);height:100%;color:#fff;display:flex;justify-content:center;align-items:flex-start;}
+  .container{width:95%;max-width:1000px;margin-top:30px;}
+  .card{background:rgba(255,255,255,0.14);backdrop-filter:blur(14px);padding:20px;border-radius:22px;text-align:center;display:none;transition:0.3s;}
+  .card.active{display:block;}
+  input, button{padding:10px;margin:5px;border-radius:7px;border:none;font-size:14px;}
+  button{background:#023e8a;color:#fff;font-weight:bold;cursor:pointer;transition:0.3s;}
+  button:hover{background:#0077b6;}
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;}
+  .nav span{cursor:pointer;padding:5px 12px;background:rgba(255,255,255,0.12);margin-right:5px;border-radius:6px;transition:0.3s;}
+  .nav span:hover{background:rgba(255,255,255,0.25);}
+  label{display:block;margin-top:10px;font-weight:bold;}
+  .flex-row{display:flex;gap:15px;align-items:center;justify-content:center;flex-wrap:wrap;}
+  table{width:100%;border-collapse:collapse;margin-top:10px;}
+  th, td{border:1px solid #fff;padding:8px;text-align:center;}
+  .checkbox{cursor:pointer;}
+  canvas{margin-top:20px;background:rgba(255,255,255,0.12);border-radius:12px;padding:10px;}
+  h2,h3,h4{margin:10px 0;}
 </style>
 </head>
 <body>
 <div class="container">
 
-<!-- LOGIN CARD -->
+<!-- LOGIN -->
 <div id="loginCard" class="card active">
 <h2>Login</h2>
 <form id="loginForm">
@@ -36,10 +36,10 @@ h2,h3,h4{margin:10px 0;}
 <input type="password" id="loginPassword" placeholder="Password" required><br>
 <button type="submit">Sign In</button>
 </form>
-<p>Don't have account? <span id="showSignup" style="cursor:pointer;color:#48cae4;">Sign Up</span></p>
+<p>Don't have an account? <span id="showSignup" style="cursor:pointer;color:#48cae4;">Sign Up</span></p>
 </div>
 
-<!-- SIGNUP CARD -->
+<!-- SIGNUP -->
 <div id="signupCard" class="card">
 <h2>Sign Up</h2>
 <form id="signupForm">
@@ -47,10 +47,10 @@ h2,h3,h4{margin:10px 0;}
 <input type="password" id="signupPassword" placeholder="Password" required><br>
 <button type="submit">Sign Up</button>
 </form>
-<p>Already have account? <span id="showLogin" style="cursor:pointer;color:#48cae4;">Login</span></p>
+<p>Already have an account? <span id="showLogin" style="cursor:pointer;color:#48cae4;">Login</span></p>
 </div>
 
-<!-- DASHBOARD CARD -->
+<!-- DASHBOARD -->
 <div id="dashboardCard" class="card">
 <div class="topbar">
 <div class="nav">
@@ -119,10 +119,8 @@ h2,h3,h4{margin:10px 0;}
 <!-- SLEEP -->
 <div id="sleepTab" class="tabContent" style="display:none;">
 <h3>Sleep</h3>
-<label>Date</label>
-<input type="date" id="sleepDate">
-<label>Hours</label>
-<input type="number" id="sleepHours" placeholder="Hours">
+<label>Date</label><input type="date" id="sleepDate">
+<label>Hours</label><input type="number" id="sleepHours" placeholder="Hours">
 <button id="addSleepBtn">Save</button>
 <table id="sleepTable"></table>
 </div>
@@ -132,7 +130,7 @@ h2,h3,h4{margin:10px 0;}
 </div>
 
 <script>
-const API_URL="https://health-tracker-express.onrender.com";
+const API_URL="https://health-tracker-exp.onrender.com";
 
 const loginCard=document.getElementById("loginCard");
 const signupCard=document.getElementById("signupCard");
@@ -160,7 +158,6 @@ showLogin.addEventListener("click",()=>{signupCard.classList.remove("active");lo
 // Login
 loginForm.addEventListener("submit",async e=>{
   e.preventDefault();
-  localStorage.clear();
   const username=document.getElementById("loginEmail").value.trim();
   const password=document.getElementById("loginPassword").value.trim();
   const res=await fetch(`${API_URL}/login`,{
@@ -204,7 +201,6 @@ async function showDashboard(){
   const res=await fetch(`${API_URL}/dashboard/${userId}`);
   const data=await res.json();
 
-  // Overview cards
   overviewCards.innerHTML=`
   <div><strong>Habit Streak</strong><br>🔥 ${data.habits[0]?.streak||0} days</div>
   <div><strong>Workouts</strong><br>${data.workouts.reduce((a,b)=>a+b,0)} sessions</div>
@@ -213,7 +209,6 @@ async function showDashboard(){
   <div><strong>Hydration</strong><br>${data.hydration[data.hydration.length-1]||0} glasses</div>
   `;
 
-  // Charts
   if(caloriesChart) caloriesChart.destroy();
   if(workoutsChart) workoutsChart.destroy();
   if(mealsChart) mealsChart.destroy();
@@ -264,7 +259,7 @@ async function showDashboard(){
 
 if(localStorage.getItem("userId")) showDashboard();
 
-// --- HABITS ---
+// HABITS
 document.getElementById("addHabitBtn").addEventListener("click",async()=>{
   const habit_name=document.getElementById("habitInput").value.trim();
   if(!habit_name) return;
@@ -275,7 +270,7 @@ document.getElementById("addHabitBtn").addEventListener("click",async()=>{
   else alert(data.error);
 });
 
-// --- WORKOUTS ---
+// WORKOUTS
 document.getElementById("addWorkoutBtn").addEventListener("click",async()=>{
   const exercise=document.getElementById("exerciseInput").value.trim();
   const sets=parseInt(document.getElementById("setInput").value);
@@ -291,7 +286,7 @@ document.getElementById("addWorkoutBtn").addEventListener("click",async()=>{
   showDashboard();
 });
 
-// --- MEALS ---
+// MEALS
 document.getElementById("addMealBtn").addEventListener("click",async()=>{
   const food=document.getElementById("foodInput").value.trim();
   const quantity=parseInt(document.getElementById("quantityInput").value);
@@ -303,7 +298,7 @@ document.getElementById("addMealBtn").addEventListener("click",async()=>{
   showDashboard();
 });
 
-// --- SLEEP ---
+// SLEEP
 document.getElementById("addSleepBtn").addEventListener("click",async()=>{
   const date=document.getElementById("sleepDate").value;
   const hours=parseFloat(document.getElementById("sleepHours").value);
@@ -315,7 +310,7 @@ document.getElementById("addSleepBtn").addEventListener("click",async()=>{
   showDashboard();
 });
 
-// --- HYDRATION ---
+// HYDRATION
 document.getElementById("addGlassBtn").addEventListener("click",async()=>{
   const glasses=parseInt(document.getElementById("hydrationInput").value);
   if(!glasses || glasses<1) return;
@@ -330,7 +325,7 @@ document.getElementById("resetGlassBtn").addEventListener("click",async()=>{
   showDashboard();
 });
 
-// --- HABIT ACTIONS ---
+// HABIT ACTIONS
 async function deleteHabit(id){
   const userId=localStorage.getItem("userId");
   await fetch(`${API_URL}/habits/${userId}/delete/${id}`,{method:"POST"});
