@@ -86,7 +86,7 @@ th,td{border:1px solid #fff;padding:8px;text-align:center;}
 </div>
 
 <!-- HABITS -->
-<div id="habitsTab" class="tabContent" style="display:none;">
+<div id="habitsTab" class="tabContent">
 <h3>Habits</h3>
 <label>Habit Name</label>
 <input type="text" id="habitInput" placeholder="Habit">
@@ -95,7 +95,7 @@ th,td{border:1px solid #fff;padding:8px;text-align:center;}
 </div>
 
 <!-- WORKOUTS -->
-<div id="workoutsTab" class="tabContent" style="display:none;">
+<div id="workoutsTab" class="tabContent">
 <h3>Workouts</h3>
 <label>Exercise</label><input type="text" id="exerciseInput" placeholder="Exercise">
 <label>Sets</label><input type="number" id="setInput" placeholder="Sets">
@@ -107,7 +107,7 @@ th,td{border:1px solid #fff;padding:8px;text-align:center;}
 </div>
 
 <!-- MEALS -->
-<div id="mealsTab" class="tabContent" style="display:none;">
+<div id="mealsTab" class="tabContent">
 <h3>Meals</h3>
 <label>Food</label><input type="text" id="foodInput" placeholder="Food">
 <label>Quantity</label><input type="number" id="quantityInput" placeholder="Qty">
@@ -117,7 +117,7 @@ th,td{border:1px solid #fff;padding:8px;text-align:center;}
 </div>
 
 <!-- SLEEP -->
-<div id="sleepTab" class="tabContent" style="display:none;">
+<div id="sleepTab" class="tabContent">
 <h3>Sleep</h3>
 <label>Date</label>
 <input type="date" id="sleepDate">
@@ -192,7 +192,7 @@ async function showDashboard(){
 
   overviewCards.innerHTML="";
   const cards = [
-    {title:"Habit Streak",value:`🔥 ${data.habits[0]?.streak||0} days`},
+    {title:"Habit Streak",value:`🔥 ${data.habits.length?data.habits[0].streak:0} days`},
     {title:"Workouts",value:`${data.workouts.reduce((a,b)=>a+b,0)} sessions`},
     {title:"Meals",value:`${data.meals.reduce((a,b)=>a+b,0)} meals`},
     {title:"Calories",value:`${data.calories[data.calories.length-1]||0} kcal`},
@@ -251,7 +251,7 @@ function populateHabits(habits){
 }
 
 // WORKOUTS
-addWorkoutBtn=document.getElementById("addWorkoutBtn");
+const addWorkoutBtn=document.getElementById("addWorkoutBtn");
 const exerciseInput=document.getElementById("exerciseInput");
 const setInput=document.getElementById("setInput");
 const repsInput=document.getElementById("repsInput");
@@ -273,7 +273,7 @@ function populateWorkouts(workouts){
 }
 
 // MEALS
-addMealBtn=document.getElementById("addMealBtn");
+const addMealBtn=document.getElementById("addMealBtn");
 const foodInput=document.getElementById("foodInput");
 const quantityInput=document.getElementById("quantityInput");
 const mealsTable=document.getElementById("mealsTable");
