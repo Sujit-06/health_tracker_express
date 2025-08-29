@@ -157,7 +157,6 @@ showLogin.addEventListener("click",()=>{signupCard.classList.remove("active");lo
 
 loginForm.addEventListener("submit",async e=>{
   e.preventDefault();
-  localStorage.clear();
   const username=document.getElementById("loginEmail").value.trim();
   const password=document.getElementById("loginPassword").value.trim();
   const res=await fetch(`${API_URL}/login`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username,password})});
