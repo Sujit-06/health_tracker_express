@@ -215,6 +215,7 @@ async function showDashboard(){
   mealsChart=new Chart(document.getElementById("mealsChart"),{type:"line",data:{labels,datasets:[{label:"Meals",data:data.meals,borderColor:"#90e0ef",fill:false}]},options:{responsive:true}});
   hydrationChart=new Chart(document.getElementById("hydrationChart"),{type:"bar",data:{labels,datasets:[{label:"Water",data:data.hydration,backgroundColor:"#023e8a"}]},options:{responsive:true}});
 
+  // HABITS TABLE
   const habitsTable=document.getElementById("habitsTable");
   habitsTable.innerHTML="<tr><th>Habit</th><th>Streak</th><th>Completed Today</th><th>Action</th></tr>";
   data.habits.forEach(h=>{
@@ -223,22 +224,25 @@ async function showDashboard(){
     habitsTable.appendChild(tr);
   });
 
+  // WORKOUTS TABLE
   const workoutsTable=document.getElementById("workoutsTable");
-  workoutsTable.innerHTML="<tr><th>Date</th><th>Exercise</th><th>Sets</th><th>Reps</th><th>Duration</th></tr>";
+  workoutsTable.innerHTML="<tr><th>Day</th><th>Exercise</th><th>Sets</th><th>Reps</th><th>Duration</th></tr>";
   data.workouts_history?.forEach(w=>{
     const tr=document.createElement("tr");
     tr.innerHTML=`<td>${w.day}</td><td>${w.exercise}</td><td>${w.sets}</td><td>${w.reps}</td><td>${w.duration}</td>`;
     workoutsTable.appendChild(tr);
   });
 
+  // MEALS TABLE
   const mealsTable=document.getElementById("mealsTable");
-  mealsTable.innerHTML="<tr><th>Date</th><th>Food</th><th>Quantity</th><th>Calories</th></tr>";
+  mealsTable.innerHTML="<tr><th>Day</th><th>Food</th><th>Quantity</th><th>Calories</th></tr>";
   data.meals_history?.forEach(m=>{
     const tr=document.createElement("tr");
     tr.innerHTML=`<td>${m.day}</td><td>${m.food}</td><td>${m.quantity}</td><td>${m.calories}</td>`;
     mealsTable.appendChild(tr);
   });
 
+  // SLEEP TABLE
   const sleepTable=document.getElementById("sleepTable");
   sleepTable.innerHTML="<tr><th>Date</th><th>Hours</th></tr>";
   data.sleep.forEach(s=>{const tr=document.createElement("tr");tr.innerHTML=`<td>${s.date}</td><td>${s.hours}</td>`;sleepTable.appendChild(tr);});
@@ -246,6 +250,7 @@ async function showDashboard(){
 
 if(localStorage.getItem("userId")) showDashboard();
 
+// HABITS, WORKOUTS, MEALS, SLEEP & HYDRATION EVENT LISTENERS
 document.getElementById("addHabitBtn").addEventListener("click",async()=>{
   const habit_name=document.getElementById("habitInput").value.trim();
   if(!habit_name) return;
