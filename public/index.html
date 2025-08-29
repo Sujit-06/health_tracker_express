@@ -4,232 +4,217 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Health Tracker</title>
+
+<!-- Chart.js CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
-html, body { height:100%; margin:0; font-family:'Segoe UI', Arial, sans-serif; background:linear-gradient(120deg,#a2d4f6 60%,#023e8a 100%); color:#fff; }
-body::before, body::after {content:""; position:absolute; border-radius:40% 60% 60% 40% / 60% 40% 60% 40%; opacity:0.3; z-index:0;}
-body::before {top:-100px; left:-100px; width:350px; height:350px; background:#90e0ef;}
-body::after {right:-120px; bottom:-160px; width:400px; height:300px; background:#0077b6;}
-.container {position:relative; z-index:1; width:100%; max-width:900px; margin:auto; padding:20px;}
-.card {background: rgba(255,255,255,0.14); box-shadow: 0 8px 32px 0 rgba(31,38,135,0.18); border-radius:22px; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); padding:34px; text-align:center; display:none;}
-.card.active {display:block;}
-.logo {font-size:1.1rem; font-weight:600; margin-bottom:17px;}
-h2 {margin:0 0 12px 0; letter-spacing:1px; font-size:2rem; font-weight:600;}
-label {display:block; text-align:left; margin:13px 0 3px 1px; font-size:1.04rem;}
-input[type="email"], input[type="password"], input[type="number"] {width:100%; padding:10px; border-radius:7px; border:none; margin-bottom:7px; background:rgba(255,255,255,0.27); color:#252525; font-size:1rem; outline:none;}
-.signin-btn {width:100%; padding:11px 0; background:#023e8a; color:#fff; font-weight:bold; border-radius:7px; border:none; font-size:1.07rem; cursor:pointer; margin-bottom:18px;}
-.signin-btn:hover {background:#0077b6;}
-.link {color:#48cae4; text-decoration:none; cursor:pointer;}
-.topbar {display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;}
-.nav {display:flex; gap:10px; flex-wrap:wrap;}
-.nav span {cursor:pointer; padding:5px 10px; border-radius:6px; background:rgba(255,255,255,0.12);}
-#overviewCards {display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:20px;}
-#overviewCards div {background: rgba(255,255,255,0.15); padding:15px; border-radius:12px; text-align:left;}
-#trends {display:grid; grid-template-columns:repeat(2,1fr); gap:15px; margin-bottom:20px;}
-#trends canvas {background:rgba(255,255,255,0.1); border-radius:12px; padding:10px;}
-table {width:100%; border-collapse:collapse; margin-bottom:15px;}
-table th, table td {padding:8px; border:1px solid #fff; text-align:center;}
-button {cursor:pointer;}
+/* ===== Global Styles ===== */
+html, body {
+  height:100%;
+  margin:0;
+  font-family:'Segoe UI', Arial, sans-serif;
+  background: linear-gradient(120deg, #a2d4f6 60%, #023e8a 100%);
+  color: #fff;
+  overflow-x: hidden;
+  position: relative;
+}
+
+body::before, body::after {
+  content:"";
+  position:absolute;
+  border-radius:40% 60% 60% 40% / 60% 40% 60% 40%;
+  opacity:0.3;
+  z-index:0;
+}
+
+body::before {
+  top:-100px;
+  left:-100px;
+  width:350px;
+  height:350px;
+  background:#90e0ef;
+}
+
+body::after {
+  right:-120px;
+  bottom:-160px;
+  width:400px;
+  height:300px;
+  background:#0077b6;
+}
+
+.container {
+  position:relative;
+  z-index:1;
+  width:100%;
+  max-width:900px;
+  margin:auto;
+  padding:20px;
+}
+
+/* ===== Cards ===== */
+.card {
+  background: rgba(255,255,255,0.14);
+  box-shadow: 0 8px 32px 0 rgba(31,38,135,0.18);
+  border-radius:22px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  padding:34px;
+  text-align:center;
+  display:none;
+}
+
+.card.active { display:block; }
+
+.logo { font-size:1.2rem; font-weight:600; margin-bottom:20px; }
+h2 { margin:0 0 15px 0; letter-spacing:1px; font-size:2rem; font-weight:600; }
+
+label { display:block; text-align:left; margin:12px 0 5px 0; font-size:1rem; }
+input[type="email"], input[type="password"], input[type="number"] {
+  width:100%;
+  padding:10px;
+  border-radius:7px;
+  border:none;
+  margin-bottom:10px;
+  background: rgba(255,255,255,0.27);
+  color:#252525;
+  font-size:1rem;
+  outline:none;
+}
+
+.signin-btn {
+  width:100%;
+  padding:11px 0;
+  background:#023e8a;
+  color:#fff;
+  font-weight:bold;
+  border-radius:7px;
+  border:none;
+  font-size:1.07rem;
+  cursor:pointer;
+  margin-bottom:18px;
+  transition: background 0.2s;
+}
+
+.signin-btn:hover { background:#0077b6; }
+.link { color:#48cae4; text-decoration:none; cursor:pointer; }
+
+.topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; }
+.nav { display:flex; gap:10px; flex-wrap:wrap; }
+.nav span { cursor:pointer; padding:5px 10px; border-radius:6px; background:rgba(255,255,255,0.12); }
+
+#overviewCards {
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:12px;
+  margin-bottom:20px;
+}
+
+#overviewCards div {
+  background: rgba(255,255,255,0.15);
+  padding:15px;
+  border-radius:12px;
+  text-align:left;
+}
+
+#trends { display:grid; grid-template-columns:repeat(2,1fr); gap:15px; margin-bottom:20px; }
+#trends canvas { background:rgba(255,255,255,0.1); border-radius:12px; padding:10px; }
+
+table { width:100%; border-collapse:collapse; margin-bottom:15px; }
+table th, table td { padding:8px; border:1px solid #fff; text-align:center; }
+button { cursor:pointer; }
 </style>
 </head>
 <body>
+
 <div class="container">
 
-<!-- Login Card -->
-<div id="loginCard" class="card active">
-  <div class="logo">Your logo</div>
-  <h2>Login</h2>
-  <form id="loginForm">
-    <label>Email</label>
-    <input type="email" id="loginEmail" placeholder="username@gmail.com" required>
-    <label>Password</label>
-    <input type="password" id="loginPassword" placeholder="Password" required>
-    <button type="submit" class="signin-btn">Sign in</button>
-  </form>
-  <div>Don't have an account? <span class="link" id="showSignup">Sign Up</span></div>
-</div>
-
-<!-- Signup Card -->
-<div id="signupCard" class="card">
-  <div class="logo">Your logo</div>
-  <h2>Sign Up</h2>
-  <form id="signupForm">
-    <label>Email</label>
-    <input type="email" id="signupEmail" placeholder="username@gmail.com" required>
-    <label>Password</label>
-    <input type="password" id="signupPassword" placeholder="Password" required>
-    <button type="submit" class="signin-btn">Sign Up</button>
-  </form>
-  <div>Already have an account? <span class="link" id="showLogin">Login</span></div>
-</div>
-
-<!-- Dashboard Card -->
-<div id="dashboardCard" class="card">
-  <div class="topbar">
-    <div class="nav">
-      <span class="tab" data-tab="overview">Dashboard</span>
-      <span class="tab" data-tab="habits">Habits</span>
-      <span class="tab" data-tab="workouts">Workouts</span>
-      <span class="tab" data-tab="meals">Meals</span>
-      <span class="tab" data-tab="sleep">Sleep</span>
-      <span class="tab" data-tab="mood">Mood</span>
-      <span class="tab" data-tab="friends">Friends</span>
-    </div>
-    <div>
-      <span id="userInfo">Hi User</span> | <button class="signin-btn" id="logoutBtn">Logout</button>
-    </div>
+  <!-- Login Card -->
+  <div id="loginCard" class="card active">
+    <div class="logo">Health Tracker</div>
+    <h2>Login</h2>
+    <form id="loginForm">
+      <label>Email</label>
+      <input type="email" id="loginEmail" placeholder="username@gmail.com" required>
+      <label>Password</label>
+      <input type="password" id="loginPassword" placeholder="Password" required>
+      <button type="submit" class="signin-btn">Sign in</button>
+    </form>
+    <div>Don't have an account? <span class="link" id="showSignup">Sign Up</span></div>
   </div>
 
-  <div id="tabContents">
-    <!-- Overview -->
-    <div class="tabContent" id="overviewTab">
-      <h2>Today Overview</h2>
-      <div id="overviewCards"></div>
-      <h2>Trends (Last 7 Days)</h2>
-      <div id="trends">
-        <canvas id="caloriesChart"></canvas>
-        <canvas id="workoutsChart"></canvas>
-        <canvas id="mealsChart"></canvas>
-        <canvas id="hydrationChart"></canvas>
+  <!-- Signup Card -->
+  <div id="signupCard" class="card">
+    <div class="logo">Health Tracker</div>
+    <h2>Sign Up</h2>
+    <form id="signupForm">
+      <label>Email</label>
+      <input type="email" id="signupEmail" placeholder="username@gmail.com" required>
+      <label>Password</label>
+      <input type="password" id="signupPassword" placeholder="Password" required>
+      <button type="submit" class="signin-btn">Sign Up</button>
+    </form>
+    <div>Already have an account? <span class="link" id="showLogin">Login</span></div>
+  </div>
+
+  <!-- Dashboard Card -->
+  <div id="dashboardCard" class="card">
+    <div class="topbar">
+      <div class="nav">
+        <span class="tab" data-tab="overview">Dashboard</span>
+        <span class="tab" data-tab="habits">Habits</span>
+        <span class="tab" data-tab="workouts">Workouts</span>
+        <span class="tab" data-tab="meals">Meals</span>
+        <span class="tab" data-tab="sleep">Sleep</span>
+        <span class="tab" data-tab="mood">Mood</span>
+        <span class="tab" data-tab="friends">Friends</span>
+      </div>
+      <div>
+        <span id="userInfo">Hi User</span> | <button class="signin-btn" id="logoutBtn">Logout</button>
       </div>
     </div>
 
-    <!-- Habits -->
-    <div class="tabContent" id="habitsTab" style="display:none;">
-      <h2>Your Habits</h2>
-      <table id="habitsTable"></table>
-    </div>
+    <div id="tabContents">
+      <!-- Overview -->
+      <div class="tabContent" id="overviewTab">
+        <h2>Today Overview</h2>
+        <div id="overviewCards"></div>
+        <h2>Trends (Last 7 Days)</h2>
+        <div id="trends">
+          <canvas id="caloriesChart"></canvas>
+          <canvas id="workoutsChart"></canvas>
+          <canvas id="mealsChart"></canvas>
+          <canvas id="hydrationChart"></canvas>
+        </div>
+      </div>
 
-    <!-- Workouts -->
-    <div class="tabContent" id="workoutsTab" style="display:none;">
-      <h2>Workouts</h2>
-      <table id="workoutsTable"></table>
-    </div>
+      <!-- Habits -->
+      <div class="tabContent" id="habitsTab" style="display:none;">
+        <h2>Your Habits</h2>
+        <table id="habitsTable"></table>
+      </div>
 
-    <!-- Meals -->
-    <div class="tabContent" id="mealsTab" style="display:none;">
-      <h2>Meals</h2>
-      <table id="mealsTable"></table>
-    </div>
+      <!-- Workouts -->
+      <div class="tabContent" id="workoutsTab" style="display:none;">
+        <h2>Workouts</h2>
+        <table id="workoutsTable"></table>
+      </div>
 
-    <!-- Sleep / Mood / Friends -->
-    <div class="tabContent" id="sleepTab" style="display:none;"><h2>Sleep</h2><p>Coming soon...</p></div>
-    <div class="tabContent" id="moodTab" style="display:none;"><h2>Mood</h2><p>Coming soon...</p></div>
-    <div class="tabContent" id="friendsTab" style="display:none;"><h2>Friends</h2><p>Coming soon...</p></div>
+      <!-- Meals -->
+      <div class="tabContent" id="mealsTab" style="display:none;">
+        <h2>Meals</h2>
+        <table id="mealsTable"></table>
+      </div>
+
+      <div class="tabContent" id="sleepTab" style="display:none;"><h2>Sleep</h2><p>Coming soon...</p></div>
+      <div class="tabContent" id="moodTab" style="display:none;"><h2>Mood</h2><p>Coming soon...</p></div>
+      <div class="tabContent" id="friendsTab" style="display:none;"><h2>Friends</h2><p>Coming soon...</p></div>
+    </div>
   </div>
-</div>
-
-<script>
-const API_URL = "https://health-tracker-express.onrender.com";
-
-// Elements
-const loginCard = document.getElementById("loginCard");
-const signupCard = document.getElementById("signupCard");
-const dashboardCard = document.getElementById("dashboardCard");
-const showSignup = document.getElementById("showSignup");
-const showLogin = document.getElementById("showLogin");
-const loginForm = document.getElementById("loginForm");
-const signupForm = document.getElementById("signupForm");
-const logoutBtn = document.getElementById("logoutBtn");
-
-const overviewCards = document.getElementById("overviewCards");
-
-let caloriesChart, workoutsChart, mealsChart, hydrationChart;
-
-// Tab Switching
-const tabs = document.querySelectorAll(".tab");
-const tabContents = document.querySelectorAll(".tabContent");
-tabs.forEach(tab=>{
-  tab.addEventListener("click", ()=>{
-    tabContents.forEach(tc=>tc.style.display="none");
-    document.getElementById(tab.dataset.tab + "Tab").style.display="block";
-  });
-});
-
-// View Switch
-showSignup.addEventListener("click", ()=>{ loginCard.classList.remove("active"); signupCard.classList.add("active"); });
-showLogin.addEventListener("click", ()=>{ signupCard.classList.remove("active"); loginCard.classList.add("active"); });
-
-// Login
-loginForm.addEventListener("submit", async e=>{
-  e.preventDefault();
-  const username = document.getElementById("loginEmail").value.trim();
-  const password = document.getElementById("loginPassword").value.trim();
-  const res = await fetch(`${API_URL}/login`, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({username,password})});
-  const data = await res.json();
-  if(data.userId){ localStorage.setItem("userId", data.userId); showDashboard(); } else alert(data.error||"Login failed");
-});
-
-// Signup
-signupForm.addEventListener("submit", async e=>{
-  e.preventDefault();
-  const username = document.getElementById("signupEmail").value.trim();
-  const password = document.getElementById("signupPassword").value.trim();
-  const res = await fetch(`${API_URL}/register`, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({username,password})});
-  const data = await res.json();
-  if(data.message){ alert("Signup successful!"); signupCard.classList.remove("active"); loginCard.classList.add("active"); } else alert(data.error||"Signup failed");
-});
-
-// Logout
-logoutBtn.addEventListener("click", ()=>{ localStorage.removeItem("userId"); dashboardCard.classList.remove("active"); loginCard.classList.add("active"); });
-
-// Populate Tables
-function populateTables(data){
-  // Habits
-  const habitsTable = document.getElementById("habitsTable");
-  habitsTable.innerHTML = "<tr><th>Habit</th><th>Streak</th></tr>";
-  data.habits.forEach(h=>{ const tr=document.createElement("tr"); tr.innerHTML=`<td>${h.habit_name}</td><td>${h.streak} days</td>`; habitsTable.appendChild(tr); });
-
-  // Workouts
-  const workoutsTable = document.getElementById("workoutsTable");
-  workoutsTable.innerHTML = "<tr><th>Day</th><th>Sessions</th><th>Action</th></tr>";
-  data.labels.forEach((day, idx)=>{ const tr=document.createElement("tr"); tr.innerHTML=`<td>${day}</td><td>${data.workouts[idx]}</td><td><button onclick="addWorkout('${day}')">+1</button></td>`; workoutsTable.appendChild(tr); });
-
-  // Meals
-  const mealsTable = document.getElementById("mealsTable");
-  mealsTable.innerHTML = "<tr><th>Day</th><th>Meals</th><th>Action</th></tr>";
-  data.labels.forEach((day, idx)=>{ const tr=document.createElement("tr"); tr.innerHTML=`<td>${day}</td><td>${data.meals[idx]}</td><td><button onclick="addMeal('${day}')">+1</button></td>`; mealsTable.appendChild(tr); });
-}
-
-// Dashboard
-async function showDashboard(){
-  loginCard.classList.remove("active"); signupCard.classList.remove("active"); dashboardCard.classList.add("active");
-  const userId = localStorage.getItem("userId");
-  document.getElementById("userInfo").innerText = "User #" + userId;
-
-  const res = await fetch(`${API_URL}/dashboard/${userId}`);
-  const data = await res.json();
-
-  // Overview Cards
-  overviewCards.innerHTML = `
-    <div><strong>Habit Streak</strong><br>🔥 ${(data.habits[0] && data.habits[0].streak)?data.habits[0].streak:0} days</div>
-    <div><strong>Workouts This Week</strong><br>${data.workouts.reduce((a,b)=>a+b,0)} sessions <button id="addWorkoutBtn">Add</button></div>
-    <div><strong>Calories Today</strong><br>${data.calories[data.calories.length-1]} kcal <input type="number" id="addCaloriesInput" placeholder="Add kcal"><button id="addCaloriesBtn">Add</button></div>
-    <div><strong>Hydration</strong><br>${data.hydration[data.hydration.length-1]} glasses <button id="addWaterBtn">Add</button></div>
-  `;
-
-  // Actions
-  const today = data.labels[data.labels.length-1];
-  document.getElementById("addWaterBtn").onclick = async()=>{ await fetch(`${API_URL}/hydration/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({day:today,glasses:1})}); showDashboard(); };
-  document.getElementById("addWorkoutBtn").onclick = async()=>{ await fetch(`${API_URL}/workouts/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({day:today,sessions:1})}); showDashboard(); };
-  document.getElementById("addCaloriesBtn").onclick = async()=>{ const kcal=parseInt(document.getElementById("addCaloriesInput").value); if(isNaN(kcal)||kcal<=0)return alert("Invalid"); await fetch(`${API_URL}/calories/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({day:today,calories:kcal})}); document.getElementById("addCaloriesInput").value=""; showDashboard(); };
-
-  // Populate Tables
-  populateTables(data);
-
-  // Charts
-  if(caloriesChart) caloriesChart.destroy(); if(workoutsChart) workoutsChart.destroy(); if(mealsChart) mealsChart.destroy(); if(hydrationChart) hydrationChart.destroy();
-  const labels = data.labels;
-  caloriesChart = new Chart(document.getElementById("caloriesChart"),{type:"line",data:{labels,datasets:[{label:"Calories",data:data.calories,borderColor:"#48cae4",fill:false}]},options:{plugins:{legend:{labels:{color:"#fff"}}},scales:{x:{ticks:{color:"#fff"}},y:{ticks:{color:"#fff"}}}}});
-  workoutsChart = new Chart(document.getElementById("workoutsChart"),{type:"bar",data:{labels,datasets:[{label:"Workouts",data:data.workouts,backgroundColor:"#0077b6"}]},options:{plugins:{legend:{labels:{color:"#fff"}}},scales:{x:{ticks:{color:"#fff"}},y:{ticks:{color:"#fff"}}}}});
-  mealsChart = new Chart(document.getElementById("mealsChart"),{type:"line",data:{labels,datasets:[{label:"Meals",data:data.meals,borderColor:"#90e0ef",fill:false}]},options:{plugins:{legend:{labels:{color:"#fff"}}},scales:{x:{ticks:{color:"#fff"}},y:{ticks:{color:"#fff"}}}}});
-  hydrationChart = new Chart(document.getElementById("hydrationChart"),{type:"bar",data:{labels,datasets:[{label:"Water",data:data.hydration,backgroundColor:"#023e8a"}]},options:{plugins:{legend:{labels:{color:"#fff"}}},scales:{x:{ticks:{color:"#fff"}},y:{ticks:{color:"#fff"}}}}});
-}
-
-// Auto-login
-if(localStorage.getItem("userId")) showDashboard();
-</script>
 
 </div>
+
+<script src="app.js"></script> <!-- Put your JS here or inline -->
 </body>
 </html>
