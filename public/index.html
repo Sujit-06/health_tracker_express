@@ -8,7 +8,7 @@
 <style>
 html,body{margin:0;padding:0;font-family:'Segoe UI',Arial,sans-serif;background:linear-gradient(120deg,#a2d4f6 60%,#023e8a 100%);height:100%;color:#fff;}
 .container{width:95%;max-width:1000px;margin:20px auto;}
-.card{background:rgba(255,255,255,0.1);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:20px;border-radius:20px;margin-bottom:20px;display:none;}
+.card{background:rgba(255,255,255,0.1);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12);padding:20px;border-radius:20px;margin-bottom:20px;display:none;}
 .card.active{display:block;}
 input,button{padding:10px;margin:5px;border-radius:8px;border:none;}
 button{background:#023e8a;color:#fff;font-weight:bold;cursor:pointer;transition:0.3s;}
@@ -86,8 +86,10 @@ th,td{border:1px solid #fff;padding:8px;text-align:center;}
 </div>
 
 <!-- HABITS -->
-<div id="habitsTab" class="tabContent">
+<div id="habitsTab" class="tabContent" style="display:none;">
 <h3>Habits</h3>
+<label>Date</label>
+<input type="date" id="habitDate">
 <label>Habit Name</label>
 <input type="text" id="habitInput" placeholder="Habit">
 <button id="addHabitBtn">Add Habit</button>
@@ -95,8 +97,10 @@ th,td{border:1px solid #fff;padding:8px;text-align:center;}
 </div>
 
 <!-- WORKOUTS -->
-<div id="workoutsTab" class="tabContent">
+<div id="workoutsTab" class="tabContent" style="display:none;">
 <h3>Workouts</h3>
+<label>Date</label>
+<input type="date" id="workoutDate">
 <label>Exercise</label><input type="text" id="exerciseInput" placeholder="Exercise">
 <label>Sets</label><input type="number" id="setInput" placeholder="Sets">
 <label>Reps</label><input type="number" id="repsInput" placeholder="Reps">
@@ -107,8 +111,10 @@ th,td{border:1px solid #fff;padding:8px;text-align:center;}
 </div>
 
 <!-- MEALS -->
-<div id="mealsTab" class="tabContent">
+<div id="mealsTab" class="tabContent" style="display:none;">
 <h3>Meals</h3>
+<label>Date</label>
+<input type="date" id="mealDate">
 <label>Food</label><input type="text" id="foodInput" placeholder="Food">
 <label>Quantity</label><input type="number" id="quantityInput" placeholder="Qty">
 <button id="addMealBtn">Add Meal</button>
@@ -117,7 +123,7 @@ th,td{border:1px solid #fff;padding:8px;text-align:center;}
 </div>
 
 <!-- SLEEP -->
-<div id="sleepTab" class="tabContent">
+<div id="sleepTab" class="tabContent" style="display:none;">
 <h3>Sleep</h3>
 <label>Date</label>
 <input type="date" id="sleepDate">
@@ -192,7 +198,7 @@ async function showDashboard(){
 
   overviewCards.innerHTML="";
   const cards = [
-    {title:"Habit Streak",value:`🔥 ${data.habits.length?data.habits[0].streak:0} days`},
+    {title:"Habit Streak",value:`🔥 ${data.habits[0]?.streak||0} days`},
     {title:"Workouts",value:`${data.workouts.reduce((a,b)=>a+b,0)} sessions`},
     {title:"Meals",value:`${data.meals.reduce((a,b)=>a+b,0)} meals`},
     {title:"Calories",value:`${data.calories[data.calories.length-1]||0} kcal`},
@@ -224,20 +230,24 @@ async function showDashboard(){
 
 // HABITS
 const habitInput=document.getElementById("habitInput");
+const habitDate=document.getElementById("habitDate");
 const addHabitBtn=document.getElementById("addHabitBtn");
 const habitsTable=document.getElementById("habitsTable");
 addHabitBtn.addEventListener("click",async()=>{
-  const habit_name=habitInput.value.trim(); if(!habit_name)return;
+  const habit_name=habitInput.value.trim(); 
+  const date = habitDate.value;
+  if(!habit_name || !date) return alert("Enter habit name and date");
   const userId=localStorage.getItem("userId");
-  await fetch(`${API_URL}/habits/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({habit_name})});
-  habitInput.value=""; showDashboard();
+  await fetch(`${API_URL}/habits/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({habit_name,date})});
+  habitInput.value=""; habitDate.value="";
+  showDashboard();
 });
 function populateHabits(habits){
-  habitsTable.innerHTML=`<tr><th>Habit</th><th>Streak</th><th>Completed Today</th><th>Action</th></tr>`;
+  habitsTable.innerHTML=`<tr><th>Date</th><th>Habit</th><th>Streak</th><th>Completed Today</th><th>Action</th></tr>`;
   const userId=localStorage.getItem("userId");
   habits.forEach(h=>{
     const tr=document.createElement("tr");
-    tr.innerHTML=`<td>${h.habit_name}</td><td>${h.streak}</td><td><input type="checkbox" class="checkbox" ${h.completed_today?'checked':''}></td><td><button class="deleteBtn">Delete</button></td>`;
+    tr.innerHTML=`<td>${h.date||''}</td><td>${h.habit_name}</td><td>${h.streak}</td><td><input type="checkbox" class="checkbox" ${h.completed_today?'checked':''}></td><td><button class="deleteBtn">Delete</button></td>`;
     tr.querySelector(".checkbox").addEventListener("change",async e=>{
       await fetch(`${API_URL}/habits/${userId}/toggle/${h.id}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({completed:e.target.checked})});
       showDashboard();
@@ -251,7 +261,8 @@ function populateHabits(habits){
 }
 
 // WORKOUTS
-const addWorkoutBtn=document.getElementById("addWorkoutBtn");
+const workoutDate=document.getElementById("workoutDate");
+addWorkoutBtn=document.getElementById("addWorkoutBtn");
 const exerciseInput=document.getElementById("exerciseInput");
 const setInput=document.getElementById("setInput");
 const repsInput=document.getElementById("repsInput");
@@ -259,35 +270,40 @@ const durationInput=document.getElementById("durationInput");
 const workoutsTable=document.getElementById("workoutsTable");
 addWorkoutBtn.addEventListener("click",async()=>{
   const userId=localStorage.getItem("userId");
-  await fetch(`${API_URL}/workouts/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({exercise:exerciseInput.value,sets:setInput.value,reps:repsInput.value,duration:durationInput.value})});
-  exerciseInput.value=setInput.value=repsInput.value=durationInput.value="";
+  const date = workoutDate.value;
+  if(!date || !exerciseInput.value) return alert("Enter date and exercise");
+  await fetch(`${API_URL}/workouts/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({date,exercise:exerciseInput.value,sets:setInput.value,reps:repsInput.value,duration:durationInput.value})});
+  exerciseInput.value=setInput.value=repsInput.value=durationInput.value=workoutDate.value="";
   showDashboard();
 });
 function populateWorkouts(workouts){
   workoutsTable.innerHTML=`<tr><th>Date</th><th>Exercise</th><th>Sets</th><th>Reps</th><th>Duration</th></tr>`;
   workouts.forEach(w=>{
     const tr=document.createElement("tr");
-    tr.innerHTML=`<td>${w.day}</td><td>${w.exercise}</td><td>${w.sets}</td><td>${w.reps}</td><td>${w.duration}</td>`;
+    tr.innerHTML=`<td>${w.date||w.day}</td><td>${w.exercise}</td><td>${w.sets}</td><td>${w.reps}</td><td>${w.duration}</td>`;
     workoutsTable.appendChild(tr);
   });
 }
 
 // MEALS
-const addMealBtn=document.getElementById("addMealBtn");
+const mealDate=document.getElementById("mealDate");
+addMealBtn=document.getElementById("addMealBtn");
 const foodInput=document.getElementById("foodInput");
 const quantityInput=document.getElementById("quantityInput");
 const mealsTable=document.getElementById("mealsTable");
 addMealBtn.addEventListener("click",async()=>{
   const userId=localStorage.getItem("userId");
-  await fetch(`${API_URL}/meals/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({food:foodInput.value,quantity:quantityInput.value})});
-  foodInput.value=quantityInput.value="";
+  const date = mealDate.value;
+  if(!date || !foodInput.value) return alert("Enter date and food");
+  await fetch(`${API_URL}/meals/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({date,food:foodInput.value,quantity:quantityInput.value})});
+  foodInput.value=quantityInput.value=mealDate.value="";
   showDashboard();
 });
 function populateMeals(meals){
-  mealsTable.innerHTML=`<tr><th>Day</th><th>Food</th><th>Qty</th><th>Calories</th></tr>`;
+  mealsTable.innerHTML=`<tr><th>Date</th><th>Food</th><th>Qty</th><th>Calories</th></tr>`;
   meals.forEach(m=>{
     const tr=document.createElement("tr");
-    tr.innerHTML=`<td>${m.day}</td><td>${m.food}</td><td>${m.quantity}</td><td>${m.calories}</td>`;
+    tr.innerHTML=`<td>${m.date||m.day}</td><td>${m.food}</td><td>${m.quantity}</td><td>${m.calories}</td>`;
     mealsTable.appendChild(tr);
   });
 }
@@ -314,6 +330,7 @@ const addSleepBtn=document.getElementById("addSleepBtn");
 const sleepTable=document.getElementById("sleepTable");
 addSleepBtn.addEventListener("click",async()=>{
   const userId=localStorage.getItem("userId");
+  if(!sleepDate.value || !sleepHours.value) return alert("Enter date and hours");
   await fetch(`${API_URL}/sleep/${userId}/add`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({date:sleepDate.value,hours:sleepHours.value})});
   sleepDate.value=sleepHours.value="";
   showDashboard();
