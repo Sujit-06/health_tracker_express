@@ -20,6 +20,13 @@
     "jsonwebtoken": "^9.0.2",
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7"
-  }
-  
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sujit-06/heath_tracker_express.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Sujit-06/heath_tracker_express/issues"
+  },
+  "homepage": "https://github.com/Sujit-06/heath_tracker_express#readme"
 }
