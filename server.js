@@ -145,16 +145,25 @@ app.post("/habits/:userId/delete/:id",(req,res)=>{
 });
 
 app.post("/habits/:userId/toggle/:id",(req,res)=>{
-  const {userId,id}=req.params;
-  const {completed}=req.body;
-  db.run("UPDATE habits SET completed_today=? WHERE user_id=? AND id=?",[completed?1:0,userId,id],()=>res.json({success:true}));
+  const {userId,id} = req.params;
+  const {completed} = req.body;
+
+  if(completed){
+    db.run("UPDATE habits SET completed_today=1, streak=streak+1 WHERE user_id=? AND id=?",
+      [userId,id],()=>res.json({success:true}));
+  } else {
+    db.run("UPDATE habits SET completed_today=0 WHERE user_id=? AND id=?",
+      [userId,id],()=>res.json({success:true}));
+  }
 });
+
 
 // --- WORKOUTS ---
 app.post("/workouts/:userId/add",(req,res)=>{
   const {userId} = req.params;
   const {exercise,sets,reps,duration} = req.body;
-  const day = new Date().toISOString().split("T")[0];
+  const day = new Date().toLocaleString("en-US",{weekday:"short"});
+
   db.run("INSERT INTO workouts(user_id,day,exercise,sets,reps,duration) VALUES(?,?,?,?,?,?)",[userId,day,exercise,sets,reps,duration],()=>res.json({success:true}));
 });
 
@@ -162,7 +171,8 @@ app.post("/workouts/:userId/add",(req,res)=>{
 app.post("/meals/:userId/add",(req,res)=>{
   const {userId} = req.params;
   const {food,quantity} = req.body;
-  const day = new Date().toISOString().split("T")[0];
+  const day = new Date().toLocaleString("en-US",{weekday:"short"});
+
   const calories = Math.round(quantity*50);
   db.run("INSERT INTO meals(user_id,day,food,quantity,calories) VALUES(?,?,?,?,?)",[userId,day,food,quantity,calories],()=>res.json({success:true}));
 });
@@ -171,7 +181,8 @@ app.post("/meals/:userId/add",(req,res)=>{
 app.post("/hydration/:userId/add",(req,res)=>{
   const {userId} = req.params;
   const {glasses} = req.body;
-  const day = new Date().toISOString().split("T")[0];
+  const day = new Date().toLocaleString("en-US",{weekday:"short"});
+
   db.get("SELECT * FROM hydration WHERE user_id=? AND day=?",[userId,day],(err,row)=>{
     if(row) db.run("UPDATE hydration SET glasses=glasses+? WHERE id=?",[glasses,row.id],()=>res.json({success:true}));
     else db.run("INSERT INTO hydration(user_id,day,glasses) VALUES(?,?,?)",[userId,day,glasses],()=>res.json({success:true}));
