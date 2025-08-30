@@ -145,18 +145,10 @@ app.post("/habits/:userId/delete/:id",(req,res)=>{
 });
 
 app.post("/habits/:userId/toggle/:id",(req,res)=>{
-  const {userId,id} = req.params;
-  const {completed} = req.body;
-
-  if(completed){
-    db.run("UPDATE habits SET completed_today=1, streak=streak+1 WHERE user_id=? AND id=?",
-      [userId,id],()=>res.json({success:true}));
-  } else {
-    db.run("UPDATE habits SET completed_today=0 WHERE user_id=? AND id=?",
-      [userId,id],()=>res.json({success:true}));
-  }
+  const {userId,id}=req.params;
+  const {completed}=req.body;
+  db.run("UPDATE habits SET completed_today=? WHERE user_id=? AND id=?",[completed?1:0,userId,id],()=>res.json({success:true}));
 });
-
 
 // --- WORKOUTS ---
 app.post("/workouts/:userId/add",(req,res)=>{
